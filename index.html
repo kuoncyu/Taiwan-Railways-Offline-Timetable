@@ -181,7 +181,7 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
   <div class="card tile" data-go="enc" style="--c:#0f766e"><div class="ico">📖</div><b>車輛百科</b><small>車型・圖文・無障礙車廂</small></div>
   <div class="card tile" data-go="quiz" style="--c:#7c3aed"><div class="ico">🧠</div><b>台鐵小測驗</b><small>10 題・四選一</small></div></div></section>
 <section id="v-quiz" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="qz"></div></section>
-<section id="v-enc" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="vnav" class="vnav"></div><div id="vlist"></div>
+<section id="v-enc" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="etabs" class="chips" style="flex-wrap:wrap;margin-bottom:.6rem"></div><div id="vnav" class="vnav"></div><div id="vlist"></div><div id="ecode" hidden></div><div id="efan" hidden></div>
   <p class="mut">※ 無障礙車廂位置以台鐵官網「無障礙空間說明－設施配置」為準，其餘資料整理自新聞報導與維基百科；照片與摘要連網時由維基百科載入。實際編組可能異動，請以台鐵公告為準。綠色為輪椅／無障礙車廂。</p></section>
 
 <section id="v-off" class="view">
@@ -197,9 +197,9 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
     <input id="fs" type="range" min="80" max="160" step="5" aria-label="字體大小">
     <div class="row"><button class="alt" id="fsdn">A－ 縮小</button><button class="alt" id="fsup">A＋ 放大</button><button class="alt" id="fsrs">重設為自動</button></div>
     <p id="fsprev" style="margin:.6rem 0 0">預覽：自強 408 次　08:30 → 10:15　臺北 → 花蓮</p></div>
-  <div class="card pad"><b>TDX 金鑰（匿名有次數限制，建議填入）</b>
+  <div class="card pad"><b>TDX 金鑰（已內建預設金鑰，可在此改用自己的）</b>
     <div class="row"><label>Client ID<input id="cid"></label><label>Client Secret<input id="csec" type="password"></label><button id="save">儲存並重新載入</button></div>
-    <p class="mut">免費申請：tdx.transportdata.tw。金鑰只存在你瀏覽器的 localStorage。資料僅供參考，實際班次與誤點以台鐵公告為準。</p></div>
+    <p class="mut">免費申請：tdx.transportdata.tw。自行填入的金鑰只存在你瀏覽器的 localStorage，留空則使用內建金鑰。資料僅供參考，實際班次與誤點以台鐵公告為準。</p></div>
 </section>
 
 </main>
@@ -273,8 +273,9 @@ const dur=d=>d==null?'':(d>=60?Math.floor(d/60)+' 小時 ':'')+(d%60?d%60+' 分'
 
 // ===== TDX =====
 let TK=null;
+const DEF_ID='kuoncyu-c21f78eb-d64e-4ac7',DEF_SEC='c5dd3756-10fa-4698-a347-56012494c965';
 async function token(){
-  const id=localStorage.cid,sec=localStorage.csec;if(!id||!sec)return null;
+  const id=localStorage.cid||DEF_ID,sec=localStorage.csec||DEF_SEC;if(!id||!sec)return null;
   if(TK&&TK.exp>Date.now())return TK.t;
   const r=await fetch(TOKEN_URL,{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},
     body:new URLSearchParams({grant_type:'client_credentials',client_id:id,client_secret:sec})});
@@ -547,7 +548,18 @@ const QB=`內容|PP 自強號的「PP」是什麼意思？|推拉（Push-Pull）
 無障礙|PP 自強號第 12 車若為親子車廂，型號是？|40PPP2500|40PPM2500|35PPT1000|35PPH1300
 無障礙|PP 多功能車廂（40PPM2500）提供哪些設施？|輪椅停放區（含固定帶）與 10 組自行車架|商務座椅與吧台|臥鋪床位|行李託運櫃
 無障礙|PP 自強號改造前，每列僅約幾個輪椅座位？|4 個|12 個|1 個|20 個
-無障礙|親子車廂有什麼特別設計？|座位旁可固定嬰幼兒推車|附輪椅升降梯|設有吸菸區|提供臥鋪`.trim().split('\n');
+無障礙|親子車廂有什麼特別設計？|座位旁可固定嬰幼兒推車|附輪椅升降梯|設有吸菸區|提供臥鋪
+內容|台鐵貨車車身上的注音符號稱為？|國音電碼|注音密碼|摩斯注音|行車符號
+內容|國音電碼最初為何創立？|替代日治時期日文假名電報碼，讓員工容易上手|加快列車速度|方便乘客查詢時刻|紀念國語推行
+內容|貨車車身注音「ㄗㄕㄊㄍ」代表什麼？|自備 35 噸石斗車|早上通過|自備 30 噸煤斗車|專用 35 噸豬車
+內容|「ㄗㄕㄊㄍ」最後的「ㄍ」是指什麼？|35 噸|有蓋車|30 噸|25 噸
+內容|貨車記號「ㄍㄞ」（30C）是哪一種貨車？|30 噸篷車|35 噸石斗車|25 噸煤斗車|30 噸平車
+內容|貨車記號「ㄡㄆ」（25H）是哪一種貨車？|25 噸煤斗車|30 噸篷車|35 噸石斗車|25 噸豬車
+內容|貨車車種符號後加「K」表示什麼？|設有車長室|企業自備|全開車門|雙層車廂
+內容|貨車車種符號前加「P」（注音ㄗ）表示什麼？|企業自備貨車|設有車長室|冷藏車|特種貨車
+內容|國音電碼「ㄊㄞ」是哪個車站？|臺北|臺中|臺南|高雄
+內容|國音電報中「ㄓㄣㄉ」表示什麼？|準點|停駛|晚點|加開班次
+內容|貨車車種注音中，「ㄓ」代表什麼車？|豬車|冷藏車|石碴車|家畜車`.trim().split('\n');
 
 const NM={emu3k:'EMU3000 新自強號',tar:'太魯閣號（TEMU1000）',puy:'普悠瑪號（TEMU2000）',pp:'PP 推拉式自強號',dr:'柴聯自強號 DR3100',gg:'莒光號',fx:'復興號',loc:'EMU900 區間車',e500:'E500 電力機車'};
 const WCQ=[['太魯閣號','第 1、8 車'],['普悠瑪號','第 1、8 車'],['EMU3000 新自強號','第 3、7 車'],['PP 自強號（標準編組）','第 3、8 車'],['莒光號（FPK11300～11600 型）','第 1 車'],['EMU900 區間車','第 6 車'],['EMU800 區間車','第 1、8 車'],['柴聯自強號 DR3100','單號車（DR31xx）後部']];
@@ -597,6 +609,43 @@ document.addEventListener('click',e=>{const t=e.target;
   if(t.id==='qstart'||t.id==='qagain'){qStart();return}
   if(t.id==='qback'){qHome();return}
   if(t.id==='qnext'){QS.i++;QS.i<QS.list.length?qShow():qEnd()}});
+
+let ETAB='car';
+const ECODE=[
+{n:'車次奇偶與行車方向',c:'#0f766e',t:'台鐵車次的末位奇偶代表行車方向：奇數為「順行」（逆時針環島：西部南下、東部北上），偶數為「逆行」（西部北上、東部南下）。',r:[['範例','PP 自強 121 次　七堵→屏東（西部南下，奇數）'],['範例','復興 605 次　花蓮→樹林（東部北上，奇數）']]},
+{n:'車輛型號字首',c:'#7c3aed',t:'台鐵型號多以動力形式開頭，看字首就知道車種。',r:[['E＋數字','電力機車（E500、E1000）'],['R＋數字','柴電機車'],['EMU','電聯車：電動車組自帶動力（EMU3000、EMU900）'],['TEMU','傾斜式電聯車（太魯閣 TEMU1000、普悠瑪 TEMU2000）'],['DR／DMU','柴聯車：柴油動力車組（DR3100）'],['PP','推拉式客車（Push-Pull，搭配機車）']]},
+{n:'現役主要型號對照',c:'#2563eb',r:[['TEMU1000','太魯閣號（自強）'],['TEMU2000','普悠瑪號（自強）'],['EMU3000','新自強號'],['E1000／E500＋PP 客車','PP 推拉式自強號'],['DR3100','柴聯自強號'],['EMU400～900','區間車、區間快車（依班次）'],['FPK11300～11600 等客車','莒光號（機車牽引）']]},
+{n:'PP 客車字尾代碼',c:'#dc2626',t:'PP 自強號客車以字尾區分用途，例如 40PPM2500 即多功能車廂。',r:[['PPC','含車長室的車廂（第 1 車）'],['PPT','一般客車'],['PPH','無障礙車廂：輪椅空間與無障礙廁所（第 3、8 車）'],['PPM','多功能車廂：輪椅停放區＋自行車架，由原快遞車廂改裝（第 12 車）'],['PPP','親子車廂（第 12 車）']]},
+{n:'編組代號怎麼看',c:'#be123c',t:'官方編組表常見代號（M、T、P、D 為一般鐵道慣例，僅供參考）：',r:[['TED／TEM／TEP','太魯閣：駕駛車／中間動力車／集電弓動力車'],['EP-W1／EP-W2','EMU3000 含輪椅空間的車廂（第 3、7 車）'],['ET','區間車的拖車（輪椅空間所在）'],['M／T／P／D','動力／拖車／集電弓／駕駛，字母組合表示車廂功能']]},
+{n:'車站代碼（4 碼）',c:'#d97706',t:'TDX 與台鐵資料中，車站以 4 位數代碼識別，西部幹線大致由北向南遞增。',r:[['基隆','0900'],['臺北','1000'],['臺中','3300'],['高雄','4400'],['臺東','6000'],['花蓮','7000']]},
+{n:'貨車車身的注音：國音電碼',c:'#b45309',t:'貨車車身上像「ㄗㄕㄊㄍ」這樣的注音符號，是台鐵自創的「國音電碼」，鐵道迷戲稱「台灣摩斯密碼」。光復後英文打字電報機打不出中文，於是用注音編碼；民國 50 年前後導入國音電報機，也讓習慣日文假名電碼的老員工容易上手。貨車的調度與編組比客車複雜，所以車身要標示用途與載重。'},
+{n:'貨車車身怎麼讀',c:'#b45309',t:'車身通常有兩行：',r:[['第一行','載重與車種：可寫成「30C」（數字＝噸數、英文字母＝車種），或 2～4 個注音（第一碼車種、第二碼載重，少數貨車有第三、四碼表示特殊形式）'],['第二行','型式代號與車輛編號。例如「ㄍㄞ20012」與「ㄍㄞ25012」同車種、同噸位，前者為普通門（型式 20000），後者為全開車（25000）'],['加 K','車種後加 K（源於 braKe）：設有車長室（手軔機與車長閥所在）'],['加 P／ㄗ','車種前加 P（注音為「ㄗ」）：企業自備貨車']]},
+{n:'貨車車種注音',c:'#b45309',t:'車種注音多取自車種名稱中的字：',r:[['ㄍ','有蓋車（篷車）'],['ㄝ','鐵蓬車'],['ㄨ','無蓋車（敞車）'],['ㄆ','平車'],['ㄉ','大物車'],['ㄚ','石碴車'],['ㄓ','豬車'],['ㄐ','家畜車'],['ㄌ','冷藏車'],['ㄊ','通風車'],['ㄍㄣ','專用守車、蓬守車（有蓋手軔車）'],['ㄨㄣ','敞守車'],['ㄧ','工程宿營車'],['ㄈ','非常搶修車']]},
+{n:'載重與範例解讀',c:'#b45309',r:[['載重碼','出現在第二碼：ㄍ＝35 噸、ㄞ＝30 噸、ㄆ＝25 噸（與車種欄的ㄍ、ㄆ位置不同，意義也不同）'],['ㄍㄞ','有蓋車＋30 噸＝30 噸篷車，英文寫作 30C'],['ㄡㄆ','25 噸煤斗車，英文寫作 25H'],['ㄗㄕㄊㄍ','ㄗ（自備）＋ㄕㄊ（石斗車）＋ㄍ（35 噸）＝自備 35 噸石斗車']]},
+{n:'電報與行車命令裡的國音',c:'#b45309',t:'國音電碼目前仍用在行車命令，一個站名或單位只需 1～3 個注音：',r:[['臺北','ㄊㄞ'],['臺東','ㄊㄞㄉ'],['松山','ㄙㄥ'],['頭城','ㄊㄔ'],['停駛','ㄊㄕ'],['準點','ㄓㄣㄉ'],['第一養路機械隊','ㄧㄤㄐㄉ（如「於苗栗ㄧㄤㄐㄉ」）']]},
+{n:'幹線與支線名稱',c:'#475569',r:[['西部','縱貫線（北段、山線、海線）、屏東線'],['東部','宜蘭線、北迴線、臺東線（花東線）'],['南迴','南迴線（臺東—屏東）；通車後環島鐵路才全線連通'],['支線','平溪、深澳、內灣、六家、集集、沙崙']]},
+{n:'常用電話',c:'#0891b2',r:[['客服專線','0800-765-888'],['軌道障礙緊急通報','1933']]}];
+const EFAN=[
+{n:'靠山還是靠海？座位怎麼選',c:'#0f766e',t:'鐵道迷常用的選位口訣（社群整理，不論順行逆行皆適用，實際以座位圖為準）：',r:[['EMU3000','1～8 車雙號靠海，9～12 車單號靠海'],['太魯閣、普悠瑪','1～4 車雙號靠海，5～8 車單號靠海'],['柴聯自強','3、6、9、12 車單號靠海，其他車廂雙號靠海'],['莒光、復興','單號靠海'],['PP 自強','1、7、12 車單號靠海，其他雙號靠海（少數車廂型號不同，會有例外）']]},
+{n:'電聯車 vs 推拉式：兩種動力哲學',c:'#7c3aed',t:'電聯車（EMU）把馬達分散在多節車廂，加速快、可雙向駕駛；推拉式則由機車在一端拉、另一端車廂的駕駛室遙控推，客車本身沒有動力，更換機車即可維修保養，是鐵道迷愛討論的「機車牽引風情」。'},
+{n:'傾斜式列車：過彎不減速',c:'#c2410c',t:'太魯閣與普悠瑪過彎時車體會向內傾斜，抵銷離心力，讓乘客不會被甩向外側，因此能在東部彎道多的路線維持較高速度。'},
+{n:'「豬頭」E1000：台鐵流線型機車',c:'#dc2626',t:'E1000 電力機車因外型被鐵道迷暱稱為「豬頭」，是台鐵首度採用流線型車頭的電力機車，南非製造，只有一端設駕駛台，專為推拉式自強號一拉一推而設計。2026/7/1 起退出定期營運，由新購 E500 接手。'},
+{n:'2022/3/29：紅斑馬與復興號同日謝幕',c:'#64748b',t:'EMU1200「紅斑馬」服役 36 年、復興號服務逾 40 年，兩者在同一天（2022/3/29）退役，復興號末班車為花蓮→樹林的 605 次，當天許多鐵道迷搭乘紀念。'},
+{n:'莒光號的最後篇章',c:'#d97706',t:'莒光號車齡老化，2026/7/1 起每日班次由 11 列次減為 7 列次，部分改由 EMU3000、普悠瑪接替；台鐵規劃 2028 年底前全數退役。E500 電力機車也將擔任莒光牽引。'},
+{n:'EMU3000 的彩色邊條',c:'#0d9488',t:'EMU3000 車廂連接處上緣有彩色邊條，依編組分為紅、綠、藍三色；特仕車則是紅、藍、綠、黃四色混搭，分別象徵熱情、知性、靜謐與豐饒。座椅標籤藍色為一般車廂，橘色是騰雲座艙，致敬復興與莒光的傳統車色。'},
+{n:'彩繪列車',c:'#2563eb',t:'台鐵曾與日本南海電鐵合作推出「藍武士號」與「日臺友誼號」兩列彩繪列車，在西部行駛約半年，象徵臺日友好，是拍攝熱點。'},
+{n:'窄軌 vs 標準軌',c:'#475569',t:'台鐵軌距為 1067 公釐（窄軌），高鐵為 1435 公釐（標準軌），因此兩者的車輛不能互通。台鐵電氣化路段使用 25 kV 交流電。'},
+{n:'2024：台鐵變成公司',c:'#0891b2',t:'2024/1/1 起，台鐵由機關改制為「臺灣鐵路公司」營運，是鐵道迷口中的「公司化」分水嶺。'},
+{n:'電子票證的規定演變',c:'#be123c',t:'2026/7/1 起，持悠遊卡、一卡通、TPASS 不可搭乘 EMU3000（誤乘加收 50% 票價）；PP 自強號目前仍可持電子票證搭乘，台鐵正研議總量管制。'},
+{n:'站內美食：鐵路便當文化',c:'#ea580c',t:'搭火車吃便當是許多旅客的樂趣，福隆便當與池上便當是最有名的兩種，常被鐵道迷當作旅行行程的一部分。'},
+{n:'貨車上的「台灣摩斯密碼」',c:'#b45309',t:'下次看到貨運列車經過，不妨讀讀車身上的注音：鐵道檔案文物室也提到，一般民眾最容易接觸國音電報的地方，就是貨車車身上記載用途與重量的「諸元記號」。詳細解讀見「代碼」分頁。'},
+{n:'拍車安全守則',c:'#64748b',t:'拍攝列車請待在黃線後方，不要進入軌道或月台以外的禁止區域，也不要使用閃光燈干擾駕駛；為了拍照而闖入軌道，是違法且極度危險的行為。'}];
+function renderInfo(){const card=e=>`<article class="card enc" style="--c:${e.c}"><h3>${e.n}</h3>${e.t?`<p>${e.t}</p>`:''}${e.r?`<dl class="kv">${e.r.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`:''}</article>`;
+  $('ecode').innerHTML=ECODE.map(card).join('');$('efan').innerHTML=EFAN.map(card).join('')}
+function encTab(t){ETAB=t;
+  $('etabs').innerHTML=[['car','🚆 車型'],['code','🔢 代碼'],['fan','🔥 鐵道迷話題']].map(([k,n])=>`<button class="chip${k===t?' on':''}" data-et="${k}">${n}</button>`).join('');
+  $('vnav').hidden=$('vlist').hidden=t!=='car';$('ecode').hidden=t!=='code';$('efan').hidden=t!=='fan'}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-et]');if(b)encTab(b.dataset.et)});
 const WK={};
 async function wikiInfo(q){if(q in WK)return WK[q];
   try{const r=await fetch('https://zh.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=1&prop=pageimages|extracts&piprop=thumbnail&pithumbsize=640&exintro=1&explaintext=1&exsentences=3&format=json&origin=*&gsrsearch='+encodeURIComponent(q));
@@ -613,7 +662,7 @@ function renderVeh(){
    `<article class="card enc" id="e-ret" style="--c:#64748b"><h3>🕰 已退役車種<small class="x">歷史</small></h3><dl class="kv">${RET.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></article>`;
   ENC.forEach(async e=>{const w=await wikiInfo(e.q);if(!w)return;const u='https://zh.wikipedia.org/wiki/'+encodeURIComponent(w.t);
     if(w.img)$('ph-'+e.id).innerHTML=`<img loading="lazy" src="${w.img}" alt="${e.n}"><div class="cap">📷 圖片取自維基百科「${w.t}」，授權依該頁說明 · <a href="${u}" target="_blank" rel="noopener">來源 ↗</a></div>`;
-    if(w.x)$('wk-'+e.id).innerHTML=`📖 維基百科摘要：${w.x} <a href="${u}" target="_blank" rel="noopener">閱讀全文 ↗</a>`})}
+    if(w.x)$('wk-'+e.id).innerHTML=`📖 維基百科摘要：${w.x} <a href="${u}" target="_blank" rel="noopener">閱讀全文 ↗</a>`});renderInfo();encTab(ETAB)}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-j]');if(!a)return;e.preventDefault();const t=$('e-'+a.dataset.j);t&&t.scrollIntoView({behavior:'smooth',block:'start'})});
 
 // ===== 常用路線 =====
@@ -729,7 +778,7 @@ $('clr').onclick=async()=>{if(!confirm('清除已儲存的離線班表？（常�
   renderOff();renderLobby()};
 $('dlg').onclick=e=>{if(e.target===$('dlg'))$('dlg').close()};
 $('save').onclick=()=>{localStorage.cid=$('cid').value.trim();localStorage.csec=$('csec').value.trim();TK=null;load()};
-$('cid').value=localStorage.cid||'';$('csec').value=localStorage.csec||'';
+$('cid').value=localStorage.cid||'';$('csec').value=localStorage.csec||'';$('cid').placeholder='留空＝使用內建金鑰';$('csec').placeholder='留空＝使用內建金鑰';
 const net=()=>{const o=navigator.onLine;$('net').textContent=o?'● 已連線':'● 離線';$('net').className='pill'+(o?'':' off')};
 addEventListener('online',()=>{net();load()});addEventListener('offline',()=>{net();DT=0;refreshAll()});net();
 
