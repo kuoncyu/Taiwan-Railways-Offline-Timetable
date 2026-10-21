@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>try{document.documentElement.style.setProperty("--u",(+localStorage.fs||100)/100)}catch(e){}</script>
+<title>台鐵每日班次表</title>
+<style>
+:root{--bg:#eef2f7;--card:#fff;--tx:#18222f;--mut:#6a7787;--pri:#0b5cad;--pri2:#1b7fe0;--bd:#e2e8f0;--ok:#15803d;--okb:#dcfce7;--late:#b91c1c;--lateb:#fee2e2;--sh:0 2px 0.625rem rgba(15,40,80,.08)}
+@media(prefers-color-scheme:dark){:root{--bg:#0e141b;--card:#18212b;--tx:#e8edf3;--mut:#93a1b2;--pri:#5aa9ff;--pri2:#2f7fd6;--bd:#2a3644;--ok:#4ade80;--okb:#14391f;--late:#fca5a5;--lateb:#4a1d1d;--sh:none}}
+*{box-sizing:border-box}
+html{font-size:calc(clamp(15px,14px + .4vw,20px) * var(--u,1));-webkit-text-size-adjust:100%}
+body{margin:0;overflow-wrap:anywhere;font-size:1rem;font-family:system-ui,"Noto Sans TC","PingFang TC",sans-serif;background:var(--bg);color:var(--tx);line-height:1.45}
+.hero{background:linear-gradient(135deg,#0b3d7a,#1b7fe0);color:#fff;padding:1.125rem 1rem 3.5rem}
+.hero .in{max-width:60rem;margin:auto}
+.hero h1{margin:0;font-size:1.375rem;display:flex;align-items:center;gap:0.625rem;flex-wrap:wrap}
+.pill{font-size:0.75rem;font-weight:500;padding:3px 0.625rem;border-radius:6.188rem;background:rgba(255,255,255,.2)}
+.pill.off{background:#f59e0b;color:#222}
+.hero nav{margin-top:0.5rem;font-size:0.812rem;display:flex;gap:0.375rem 1rem;flex-wrap:wrap}.hero a{color:#fff;opacity:.92}
+main{max-width:60rem;margin:-2.5rem auto 0;padding:0 0.75rem 1.875rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:0.875rem;box-shadow:var(--sh)}
+.search{padding:0.875rem;position:sticky;top:0;z-index:5;margin-bottom:0.75rem}
+.route{display:grid;grid-template-columns:1fr auto 1fr;gap:0.5rem;align-items:end}
+.ep{display:flex;flex-direction:column;gap:0.375rem}.ep b{font-size:0.75rem;color:var(--mut)}
+select,input,button{font:inherit;padding:0.5rem 0.625rem;border:1px solid var(--bd);border-radius:0.562rem;background:var(--card);color:var(--tx);min-width:0;width:100%}
+button{cursor:pointer;width:auto;background:var(--pri2);color:#fff;border:0;font-weight:600}
+button.alt{background:transparent;color:var(--pri);border:1px solid var(--bd)}
+#swap{width:2.625rem;height:2.625rem;border-radius:50%;padding:0;font-size:1.125rem;margin-bottom:0}
+.flt{display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-top:0.625rem}
+.flt input#time{width:7.5rem}.flt input#no{width:6.25rem}
+.chips{display:flex;gap:0.375rem;overflow-x:auto;margin-top:0.625rem;padding-bottom:2px}
+.chip{flex:none;padding:0.312rem 0.75rem;border-radius:6.188rem;border:1px solid var(--bd);background:transparent;color:var(--tx);font-weight:500;font-size:0.812rem}
+.chip.on{background:var(--pri2);color:#fff;border-color:var(--pri2)}
+.bar{display:flex;justify-content:space-between;align-items:center;font-size:0.812rem;color:var(--mut);margin:0.25rem 0.25rem 0.5rem;gap:0.5rem;flex-wrap:wrap}
+.train{display:grid;grid-template-columns:4.875rem 1fr auto;gap:0.75rem;align-items:center;padding:0.75rem;margin-bottom:0.5rem;cursor:pointer;border-left:0.312rem solid var(--c,#888);transition:transform .08s}
+.train:hover{transform:translateY(-1px)}
+.ty{font-weight:700;color:var(--c);font-size:0.875rem;line-height:1.25}.ty small{display:block;color:var(--mut);font-weight:500;font-size:0.812rem}
+.tm{font-size:1.375rem;font-weight:700;letter-spacing:.3px}.tm i{font-style:normal;color:var(--mut);margin:0 0.375rem;font-weight:400}
+.mut{color:var(--mut);font-size:0.812rem}
+.rt{text-align:right;display:flex;flex-direction:column;gap:0.25rem;align-items:flex-end}
+.dl{font-size:0.75rem;font-weight:700;padding:2px 0.562rem;border-radius:6.188rem;background:var(--okb);color:var(--ok);white-space:nowrap}
+.dl.late{background:var(--lateb);color:var(--late)}
+.empty{padding:1.875rem;text-align:center;color:var(--mut)}
+dialog{width:min(36.25rem,100vw);max-height:92vh;border:0;border-radius:1.125rem;background:var(--card);color:var(--tx);padding:0;overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+.dh{background:var(--c,#0b5cad);color:#fff;padding:1rem;position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:0.625rem}
+.dh h2{margin:0;font-size:1.25rem}.dh .mut{color:rgba(255,255,255,.85)}
+.x{background:rgba(255,255,255,.2);width:2.125rem;height:2.125rem;padding:0;border-radius:50%}
+.db{padding:0.875rem 1rem 1.125rem}
+.banner{padding:0.625rem 0.75rem;border-radius:0.625rem;font-weight:700;background:var(--okb);color:var(--ok);display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap}
+.banner.late{background:var(--lateb);color:var(--late)}.banner.na{background:var(--bg);color:var(--mut);font-weight:500}
+.banner small{font-weight:500;opacity:.85}
+.big{display:flex;align-items:baseline;gap:0.5rem;margin:0.875rem 0 0.25rem;font-size:1.875rem;font-weight:800;flex-wrap:wrap}.big span{font-size:0.875rem;font-weight:500;color:var(--mut)}
+.tags{display:flex;gap:0.375rem;flex-wrap:wrap;margin:0.625rem 0}
+.tag{font-size:0.75rem;padding:3px 0.625rem;border-radius:6.188rem;border:1px solid var(--bd)}.tag.y{background:var(--okb);color:var(--ok);border-color:transparent}
+h3{font-size:0.875rem;margin:1rem 0 0.375rem}
+.kv{display:grid;grid-template-columns:6rem 1fr;gap:0.375rem 0.625rem;font-size:0.875rem}.kv dt{color:var(--mut)}.kv dd{margin:0}
+.cars{display:flex;gap:3px;margin:0.25rem 0}.car{flex:1;min-width:0;text-align:center;font-size:0.75rem;padding:0.375rem 0;border:1px solid var(--bd);border-radius:0.312rem}
+.car.acc{background:#15803d;color:#fff;border-color:#15803d;font-weight:700}.car b{display:block;font-size:0.812rem}
+.tl{position:relative;margin:0.375rem 0 0 0.5rem;border-left:3px solid var(--bd);padding-left:0.875rem}
+.st{position:relative;display:flex;justify-content:space-between;padding:0.312rem 0;font-size:0.875rem;opacity:.5}
+.st::before{content:"";position:absolute;left:-1.312rem;top:0.688rem;width:0.562rem;height:0.562rem;border-radius:50%;background:var(--bd)}
+.st.in{opacity:1}.st.in::before{background:var(--c)}
+.st.end{font-weight:700}.st.end::before{width:0.812rem;height:0.812rem;left:-1.438rem;top:0.562rem}
+.st span:last-child{color:var(--mut);font-variant-numeric:tabular-nums}
+.foot{display:flex;gap:0.625rem;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:1rem;font-size:0.812rem}
+details.set{margin-top:0.875rem;padding:0.75rem;font-size:0.812rem}details summary{cursor:pointer;color:var(--pri);font-weight:600}
+.row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;align-items:end}.row label{font-size:0.75rem;color:var(--mut);display:flex;flex-direction:column;gap:3px}
+@media(max-width:600px){.route{grid-template-columns:1fr}#swap{justify-self:center;margin:-2px 0}.train{grid-template-columns:3.875rem 1fr;}.rt{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}.tm{font-size:1.25rem}dialog{margin:auto 0 0;border-radius:1.125rem 1.125rem 0 0}}
+
+.hero .top{display:flex;justify-content:space-between;align-items:center;gap:0.625rem}
+.hb{background:rgba(255,255,255,.2);color:#fff;padding:0.375rem 0.875rem;border-radius:6.188rem;font-size:0.875rem;display:none}
+.view{display:none}.view.on{display:block}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.375rem,1fr));gap:0.75rem}
+.tile{display:block;text-align:center;padding:1.125rem 0.625rem 0.875rem;cursor:pointer;text-decoration:none;color:var(--tx);position:relative;transition:transform .1s}
+.tile:hover{transform:translateY(-3px)}
+.ico{width:3.75rem;height:3.75rem;border-radius:1.125rem;margin:0 auto 0.5rem;display:grid;place-items:center;font-size:1.875rem;background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 55%,#fff))}
+.tile b{display:block;font-size:1rem}.tile small{color:var(--mut);font-size:0.75rem}
+.badge{position:absolute;top:0.5rem;right:0.625rem;background:#ef4444;color:#fff;border-radius:6.188rem;font-size:0.75rem;font-weight:700;padding:1px 0.5rem}
+.sec{font-size:0.938rem;font-weight:700;margin:1.125rem 0.25rem 0.5rem}
+.favs{display:flex;gap:0.5rem;flex-wrap:wrap}
+.fv{display:flex;align-items:center;gap:0.375rem;padding:0.438rem 0.75rem;border-radius:0.75rem;border:1px solid var(--bd);background:var(--card);cursor:pointer;font-weight:600;font-size:0.875rem;box-shadow:var(--sh)}
+.fv small{font-weight:400;color:var(--mut)}
+.fvrow{display:flex;align-items:center;gap:0.625rem;padding:0.875rem;margin-bottom:0.5rem;cursor:pointer}
+.fvrow .n{flex:1;font-size:1.062rem;font-weight:700}.fvrow .n small{display:block;font-weight:400;color:var(--mut);font-size:0.812rem}
+.fvrow button{width:auto;padding:0.375rem 0.625rem}
+.pad{padding:0.875rem;margin-bottom:0.75rem}
+.vc{padding:0.875rem;margin-bottom:0.625rem;border-left:0.312rem solid var(--c)}.vc h3{margin:0 0 0.25rem;font-size:1rem}
+.toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);background:#111;color:#fff;padding:0.562rem 1.125rem;border-radius:6.188rem;font-size:0.875rem;z-index:99;display:none}
+select:disabled{opacity:.55}
+
+.enc{padding:0.875rem;margin-bottom:0.75rem;border-left:0.312rem solid var(--c)}
+.enc svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:0.625rem}
+.enc h3{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;font-size:1.125rem;margin:0.625rem 0 0.25rem}
+.enc h3 small{font-size:0.75rem;font-weight:600;padding:2px 0.562rem;border-radius:6.188rem;background:var(--okb);color:var(--ok)}
+.enc h3 small.x{background:var(--bg);color:var(--mut)}
+.enc img{width:100%;max-height:18.75rem;object-fit:cover;border-radius:0.625rem;margin-top:0.5rem}
+.cap{font-size:0.688rem;color:var(--mut);margin:3px 0 0.375rem}
+.enc p{margin:0.375rem 0}.wk{font-size:0.812rem;color:var(--mut);border-top:1px dashed var(--bd);padding-top:0.375rem;margin-top:0.5rem}
+.vnav{display:flex;gap:0.375rem;flex-wrap:wrap;margin-bottom:0.625rem}.vnav a{font-size:0.812rem;padding:0.25rem 0.688rem;border:1px solid var(--bd);border-radius:6.188rem;color:var(--tx);text-decoration:none;background:var(--card)}
+.pg{height:0.625rem;border-radius:6.188rem;background:var(--bd);overflow:hidden;margin:0.75rem 0 0.25rem}.pg i{display:block;height:100%;width:0;background:var(--pri2);transition:width .2s}.pg.ind i{width:35%;animation:ind 1s infinite alternate}@keyframes ind{to{margin-left:65%}}
+button:disabled{opacity:.5}
+
+select,input{font-size:max(16px,1rem)}
+button,select,input{min-height:2.5rem}.chip,.x,.hb{min-height:0}
+dialog{max-height:92dvh}
+.hero{padding-left:max(1rem,env(safe-area-inset-left));padding-right:max(1rem,env(safe-area-inset-right))}
+main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem,env(safe-area-inset-right))}
+.car{font-size:clamp(.55rem,2.8vw,.8rem)}
+@media(min-width:900px){#list,#nolist,#dlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 .75rem}#list>p,#list>.empty,#nolist>.empty,#dlist>.empty{grid-column:1/-1}}
+@media(max-width:380px){.hero h1{font-size:1.15rem}.train{grid-template-columns:3.5rem 1fr;gap:.6rem}.flt input#time{width:7rem}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-height:480px) and (orientation:landscape){.search{position:static}}
+.opt{display:block;width:100%;text-align:left;margin:.45rem 0;background:var(--card);color:var(--tx);border:1px solid var(--bd);font-weight:500}
+.opt.ok{background:var(--okb);color:var(--ok);border-color:var(--ok)}.opt.no{background:var(--lateb);color:var(--late);border-color:var(--late)}
+.qsvg svg{width:100%;height:auto;background:var(--bg);border-radius:10px;margin:.4rem 0}
+.wr{padding:.5rem 0;border-top:1px dashed var(--bd);font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="hero"><div class="in">
+  <div class="top"><h1 id="ttl">🚆 台鐵每日班次表 <span id="net" class="pill">連線中</span></h1><button id="home" class="hb">🏠 大廳</button></div>
+  <nav>
+    <a href="https://www.railway.gov.tw/tra-tip-web/tip" target="_blank" rel="noopener">台鐵時刻表／最新消息 ↗</a>
+    <a href="https://www.railway.gov.tw/" target="_blank" rel="noopener">台鐵官網 ↗</a>
+    <a href="https://tdx.transportdata.tw/" target="_blank" rel="noopener">TDX 資料來源 ↗</a>
+  </nav>
+</div></div>
+<main>
+
+<section id="v-lobby" class="view">
+  <div class="tiles">
+    <div class="card tile" data-go="search" style="--c:#2563eb"><div class="ico">🔎</div><b>查班次</b><small>縣市 → 起訖站</small></div>
+    <div class="card tile" data-go="fav" style="--c:#f59e0b"><span class="badge" id="favn" hidden></span><div class="ico">⭐</div><b>常用路線</b><small>一鍵查詢</small></div>
+    <div class="card tile" data-go="no" style="--c:#7c3aed"><div class="ico">🔢</div><b>車次查詢</b><small>輸入車次號碼</small></div>
+    <div class="card tile" data-go="delay" style="--c:#dc2626"><span class="badge" id="latn" hidden></span><div class="ico">⏱</div><b>即時誤點</b><small>目前誤點列車</small></div>
+    <div class="card tile" data-go="veh" style="--c:#0f766e"><div class="ico">🚃</div><b>車輛百科</b><small>車型・圖文・無障礙車廂</small></div>
+    <div class="card tile" data-go="off" style="--c:#0891b2"><div class="ico">⬇</div><b>離線資料</b><small id="offs">無網路也能查</small></div>
+    <a class="card tile" href="https://www.railway.gov.tw/tra-tip-web/tip" target="_blank" rel="noopener" style="--c:#16a34a"><div class="ico">📢</div><b>台鐵公告</b><small>官方最新消息 ↗</small></a>
+    <div class="card tile" data-go="set" style="--c:#64748b"><div class="ico">⚙</div><b>設定</b><small>字體・TDX 金鑰</small></div>
+  </div>
+  <div class="sec">⭐ 常用路線</div>
+  <div class="favs" id="lobbyfav"></div>
+  <div class="bar" style="margin-top:14px"><span id="msg">載入中…</span></div>
+</section>
+
+<section id="v-search" class="view">
+  <section class="card search">
+    <div class="route">
+      <div class="ep"><b>🟢 起站</b><select id="fc"></select><select id="from"></select></div>
+      <button id="swap" class="alt" title="對調起訖">⇅</button>
+      <div class="ep"><b>🔴 迄站</b><select id="tc"></select><select id="to"></select></div>
+    </div>
+    <div class="flt">
+      <input id="time" type="time" aria-label="出發時間起"><button id="now" class="alt">現在</button>
+      <input id="no" inputmode="numeric" placeholder="車次">
+      <button id="addfav" class="alt" style="margin-left:auto">☆ 儲存路線</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </section>
+  <div class="favs" id="favbar" style="margin-bottom:8px"></div>
+  <div class="bar"><span></span><span id="count"></span></div>
+  <div id="list"></div>
+</section>
+
+<section id="v-fav" class="view">
+  <div id="favlist"></div>
+  <p class="mut" style="text-align:center">在「查班次」選好起訖站後，按「☆ 儲存路線」就會出現在這裡。</p>
+</section>
+
+<section id="v-no" class="view">
+  <div class="card pad"><input id="no2" inputmode="numeric" placeholder="輸入車次，例如 408" style="font-size:1.125rem"></div>
+  <div id="nolist"></div>
+</section>
+
+<section id="v-delay" class="view">
+  <div class="card pad" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span id="dlinfo" class="mut"></span><button id="dlrf" class="alt">↻ 更新</button></div>
+  <div id="dlist"></div>
+</section>
+
+<section id="v-veh" class="view"><div class="tiles">
+  <div class="card tile" data-go="enc" style="--c:#0f766e"><div class="ico">📖</div><b>車輛百科</b><small>車型・圖文・無障礙車廂</small></div>
+  <div class="card tile" data-go="quiz" style="--c:#7c3aed"><div class="ico">🧠</div><b>台鐵小測驗</b><small>10 題・四選一</small></div></div></section>
+<section id="v-quiz" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="qz"></div></section>
+<section id="v-enc" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="vnav" class="vnav"></div><div id="vlist"></div>
+  <p class="mut">※ 無障礙車廂位置以台鐵官網「無障礙空間說明－設施配置」為準，其餘資料整理自新聞報導與維基百科；照片與摘要連網時由維基百科載入。實際編組可能異動，請以台鐵公告為準。綠色為輪椅／無障礙車廂。</p></section>
+
+<section id="v-off" class="view">
+  <div class="card pad"><div id="offst" style="font-size:0.938rem"></div>
+    <div id="pgw" hidden><div class="pg"><i id="pgb"></i></div><div class="mut" id="pgt"></div></div>
+    <div class="row"><button id="dl2">⬇ 下載／更新離線資料</button><button id="clr" class="alt">🗑 清除離線資料</button></div>
+    <p class="mut">連網成功載入時也會自動存一份。清除只會刪除離線班表，不影響常用路線與金鑰。離線時請用同一個瀏覽器、同一個檔案位置開啟本頁。</p></div>
+</section>
+
+<section id="v-set" class="view">
+  <div class="card pad"><b>🔠 字體大小</b>
+    <p class="mut" id="fsinfo"></p>
+    <input id="fs" type="range" min="80" max="160" step="5" aria-label="字體大小">
+    <div class="row"><button class="alt" id="fsdn">A－ 縮小</button><button class="alt" id="fsup">A＋ 放大</button><button class="alt" id="fsrs">重設為自動</button></div>
+    <p id="fsprev" style="margin:.6rem 0 0">預覽：自強 408 次　08:30 → 10:15　臺北 → 花蓮</p></div>
+  <div class="card pad"><b>TDX 金鑰（匿名有次數限制，建議填入）</b>
+    <div class="row"><label>Client ID<input id="cid"></label><label>Client Secret<input id="csec" type="password"></label><button id="save">儲存並重新載入</button></div>
+    <p class="mut">免費申請：tdx.transportdata.tw。金鑰只存在你瀏覽器的 localStorage。資料僅供參考，實際班次與誤點以台鐵公告為準。</p></div>
+</section>
+
+</main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast"></div>
+<script>
+
+const $=id=>document.getElementById(id);
+const TDX='https://tdx.transportdata.tw';
+const TOKEN_URL=TDX+'/auth/realms/TDXConnect/protocol/openid-connect/token';
+const API=TDX+'/api/basic/v3/Rail/TRA/DailyTrainTimetable/Today';
+const STATION_API=TDX+'/api/basic/v3/Rail/TRA/Station';
+const LIVE3=TDX+'/api/basic/v3/Rail/TRA/TrainLiveBoard';
+const LIVE2=TDX+'/api/basic/v2/Rail/TRA/LiveTrainDelay';
+const ORDER=['基隆市','臺北市','新北市','桃園市','新竹縣','新竹市','苗栗縣','臺中市','彰化縣','南投縣','雲林縣','嘉義縣','嘉義市','臺南市','高雄市','屏東縣','臺東縣','花蓮縣','宜蘭縣'];
+const LINES={0:'不經山海線',1:'山線',2:'海線',3:'成追線'};
+let trains=[],CITY={},ALL=[],SHOW=60,TYPE='',DELAY={},DT=0;
+
+// ===== 車型參考表（TDX 沒有逐班編組資料；依車種整理自臺灣鐵道維基館、維基百科，實際以台鐵公告為準）=====
+const NOTE='依編組而異，請洽車站或台鐵客服 0800-765-888';
+const PPS={l:'PP 自強號（E1000 型）12 節・標準編組',n:12,a:[3,8],t:'第 3、8 車為 PPH：輪椅空間＋坐式無障礙廁所；第 12 車為親子車廂（無輪椅位）'};
+const PPM={l:'PP 自強號 12 節・第 12 車為多功能車廂的編組',n:12,a:[3,8,12],t:'另加第 12 車 40PPM2500：輪椅停放區（含固定帶）＋10 組自行車架'};
+const DRD={l:'柴聯自強號 DR3100（3 輛一組）',n:3,a:[1],t:'設於 DR31xx 單號車後部（每組第 1 輛）；最多 5 組併掛，併掛時每組各有一處'};
+const ZQ=[
+ {l:'EMU3000 新自強號（12 節）',n:12,a:[3,7],t:'官方：EP-W1（第 3 車）、EP-W2（第 7 車）'},
+ {l:'太魯閣號 TEMU1000（8 節）',n:8,a:[1,8],t:'兩端駕駛車廂（TED）'},
+ {l:'普悠瑪 TEMU2000（8 節）',n:8,a:[1,8]},PPS,PPM,DRD];
+const M={
+  emu3000:{model:'EMU3000 型電聯車（新自強號）',cars:'12 節（官方編組）',access:'第 3、7 車（輪椅空間；全車坐式馬桶）',d:[ZQ[0]]},
+  puyuma:{model:'TEMU2000 型傾斜式電聯車（普悠瑪）',cars:'8 節',access:'第 1、8 車（頭尾車廂）',d:[ZQ[2]]},
+  taroko:{model:'TEMU1000 型傾斜式電聯車（太魯閣）',cars:'8 節',access:'第 1、8 車（頭尾車廂）',d:[ZQ[1]]},
+  emu900:{model:'EMU900 型通勤電聯車',cars:'10 節',access:'第 6 車（共 8 個輪椅位；第 5 車設有乘務員室）',d:[{n:10,a:[6]}]},
+  emu800:{model:'EMU800 型通勤電聯車',cars:'8 節',access:'第 1、8 車（輪椅區與自行車位）',d:[{n:8,a:[1,8]}]},
+  emu700:{model:'EMU700 型通勤電聯車',cars:'8 節',access:'設於 ET 拖車（官方圖示 8 節編組：第 3、6 車）',d:[{n:8,a:[3,6]}]},
+  local:{model:'EMU400／500／600／700／800／900（依班次）',cars:'8 節（EMU900 為 10 節）',access:'EMU800：第 1、8 車；EMU900：第 6 車；EMU400～700：ET 拖車',
+    d:[{l:'若為 EMU800',n:8,a:[1,8]},{l:'若為 EMU900',n:10,a:[6]},{l:'若為 EMU700（8 節）',n:8,a:[3,6]}]},
+  pp:{model:'推拉式自強號（E1000 型客車＋電力機車）',cars:'12 節',access:'第 3、8 車；部分列車第 12 車多功能車廂亦有輪椅停放區',d:[PPS,PPM]},
+  dr31:{model:'DR3100 型柴聯車（柴聯自強號）',cars:'3 輛一組，最多 5 組',access:'每組單號車（DR31xx）後部',d:[DRD]},
+  zq:{model:'自強號（依實際車型而異）',cars:'8～12 節',access:'車型不同位置不同，見下方分列',d:ZQ},
+  gg:{model:'莒光號客車（FPK11300／11400／11500／11600 型）',cars:'機車＋8 節（官方圖示）',access:'第 1 車（輪椅空間＋坐式無障礙廁所）',d:[{l:'FPK11300～11600 型',n:8,a:[1],t:'機車牽引；官方未列其他型號有輪椅位'}]},
+  fx:{model:'復興號客車（2022/3/29 已除役）',cars:'—',access:'已除役；生前未設輪椅座位'},
+  old:{model:'客車（機車牽引／柴聯）',cars:'依編組而異',access:NOTE},
+  unk:{model:'—',cars:'—',access:NOTE}
+};
+const OVERRIDES={};
+function vehicleOf(tr){
+  const o=OVERRIDES[tr.no];if(o&&M[o])return M[o];
+  const n=tr.type;
+  if(n.includes('DMU')||n.includes('柴聯'))return M.dr31;
+  if(n.includes('推拉')||n.includes('PP'))return M.pp;
+  if(n.includes('3000'))return M.emu3000;
+  if(n.includes('普悠瑪'))return M.puyuma;
+  if(n.includes('太魯閣'))return M.taroko;
+  if(n.includes('區間'))return M.local;
+  if(n.includes('自強'))return M.zq;
+  if(n.includes('莒光'))return M.gg;
+  if(n.includes('復興'))return M.fx;
+  if(n.includes('普快'))return M.old;
+  return M.unk;
+}
+const diagram=m=>(m.d||[]).map(x=>`<div style="margin:8px 0">${x.l?`<div class="mut"><b>${x.l}</b></div>`:''}<div class="cars">${
+  Array.from({length:x.n},(_,i)=>{const a=x.a.includes(i+1);return `<span class="car${a?' acc':''}">${i+1}${a?'<b>♿</b>':''}</span>`}).join('')}</div>${x.t?`<div class="mut" style="font-size:0.75rem">${x.t}</div>`:''}</div>`).join('');
+const accShort=tr=>{const d=vehicleOf(tr).d;return d&&d.length==1?'♿'+d[0].a.join('、')+'車':'♿'};
+const typeColor=n=>n.includes('普悠瑪')?'#c2410c':n.includes('太魯閣')?'#7c3aed':n.includes('3000')?'#0f766e':n.includes('自強')?'#dc2626':n.includes('區間快')?'#0891b2':n.includes('區間')?'#2563eb':n.includes('莒光')?'#d97706':'#64748b';
+
+const zh=o=>o&&(o.Zh_tw||o.zh_tw)||'';
+const hm=t=>(t||'').slice(0,5);
+const flag=v=>v===1||v===true;
+const mins=(a,b)=>{if(!a||!b)return null;let d=(+b.slice(0,2)*60+ +b.slice(3))-(+a.slice(0,2)*60+ +a.slice(3));if(d<0)d+=1440;return d};
+const dur=d=>d==null?'':(d>=60?Math.floor(d/60)+' 小時 ':'')+(d%60?d%60+' 分':'');
+
+// ===== TDX =====
+let TK=null;
+async function token(){
+  const id=localStorage.cid,sec=localStorage.csec;if(!id||!sec)return null;
+  if(TK&&TK.exp>Date.now())return TK.t;
+  const r=await fetch(TOKEN_URL,{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({grant_type:'client_credentials',client_id:id,client_secret:sec})});
+  if(!r.ok)throw new Error('金鑰驗證失敗');
+  const j=await r.json();TK={t:j.access_token,exp:Date.now()+((j.expires_in||3600)-60)*1000};return TK.t;
+}
+const hdr=async()=>{const t=await token();return t?{authorization:'Bearer '+t}:{}};
+
+// 即時誤點：先試 v3 TrainLiveBoard，失敗再試 v2 LiveTrainDelay
+async function loadDelay(){
+  if(!navigator.onLine)return false;
+  try{
+    const h=await hdr();let arr=null;
+    for(const u of [LIVE3,LIVE2]){
+      try{const r=await fetch(u+'?$format=JSON',{headers:h});if(!r.ok)continue;
+        const j=await r.json();arr=Array.isArray(j)?j:Object.values(j).find(Array.isArray);if(arr)break}catch(e){}
+    }
+    if(!arr)return false;
+    DELAY={};arr.forEach(x=>{if(x.TrainNo!=null)DELAY[String(x.TrainNo)]={m:+x.DelayTime||0,st:zh(x.StationName)}});
+    DT=Date.now();return true;
+  }catch(e){return false}
+}
+function delayInfo(no){
+  if(!DT)return null;
+  const d=DELAY[String(no)];return {m:d?d.m:0,st:d?d.st:'',live:!!d};
+}
+const delayBadge=no=>{const d=delayInfo(no);if(!d)return '';return d.m>0?`<span class="dl late">誤點 ${d.m} 分</span>`:`<span class="dl">準點</span>`};
+
+// ===== 離線儲存 =====
+const idb=()=>new Promise((res,rej)=>{const q=indexedDB.open('tra',1);q.onupgradeneeded=()=>q.result.createObjectStore('k');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+const idbSet=async(k,v)=>{const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('k','readwrite');t.objectStore('k').put(v,k);t.oncomplete=res;t.onerror=()=>rej(t.error)})};
+const idbGet=async k=>{const d=await idb();return new Promise((res,rej)=>{const q=d.transaction('k').objectStore('k').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})};
+
+const fmtB=n=>n>=1048576?(n/1048576).toFixed(2)+' MB':n>=1024?(n/1024).toFixed(1)+' KB':n+' B';
+const fmtT=t=>new Date(t).toLocaleString('zh-TW',{hour12:false});
+const ago=t=>{const m=Math.round((Date.now()-t)/60000);return m<1?'剛剛':m<60?m+' 分鐘前':m<1440?Math.floor(m/60)+' 小時前':Math.floor(m/1440)+' 天前'};
+let LOADING=false;
+function prog(p,txt){const w=$('pgw');w.hidden=false;w.firstElementChild.classList.toggle('ind',p==null);if(p!=null)$('pgb').style.width=p+'%';$('pgt').textContent=txt}
+async function readJson(r,cb){if(!r.body||!r.body.getReader)return r.json();
+  const tot=+r.headers.get('content-length')||0,rd=r.body.getReader(),ch=[];let n=0;
+  for(;;){const {done,value}=await rd.read();if(done)break;ch.push(value);n+=value.length;cb(n,tot)}
+  const buf=new Uint8Array(n);let o=0;ch.forEach(c=>{buf.set(c,o);o+=c.length});return JSON.parse(new TextDecoder().decode(buf))}
+async function load(){
+  if(LOADING)return;LOADING=true;$('msg').textContent='載入今日班表…';prog(null,'連線中…');
+  const today=new Date().toLocaleDateString('zh-TW');
+  try{
+    if(!navigator.onLine)throw new Error('目前離線');
+    const h=await hdr();
+    prog(5,'下載車站資料…');
+    try{const sr=await fetch(STATION_API+'?$format=JSON',{headers:h});
+      if(sr.ok){const sj=await sr.json();CITY={};
+        (sj.Stations||sj).forEach(x=>{const n=zh(x.StationName),a=typeof x.StationAddress==='string'?x.StationAddress:zh(x.StationAddress);
+          const c=x.LocationCity||((a||'').match(/^\d*(.{2}[縣市])/)||[])[1];if(n&&c)CITY[n]=c.replace('台','臺')})}}catch(e){}
+    const r=await fetch(API+'?$format=JSON',{headers:h});
+    if(!r.ok)throw new Error('HTTP '+r.status+(r.status==429?'（匿名次數已用完，請填入金鑰）':''));
+    prog(10,'下載班表…');
+    const j=await readJson(r,(n,t)=>prog(t&&n<t?10+Math.round(80*n/t):null,'下載班表 '+fmtB(n)+(t?' / '+fmtB(t):'')));
+    prog(92,'整理資料…');
+    trains=(j.TrainTimetables||[]).map(x=>({
+      no:String(x.TrainInfo.TrainNo),type:zh(x.TrainInfo.TrainTypeName),dir:x.TrainInfo.Direction,
+      from:zh(x.TrainInfo.StartingStationName),to:zh(x.TrainInfo.EndingStationName),
+      bike:x.TrainInfo.BikeFlag,wheel:x.TrainInfo.WheelchairFlag,baby:x.TrainInfo.BreastFeedFlag,daily:x.TrainInfo.DailyFlag,
+      line:x.TrainInfo.TripLine,dining:x.TrainInfo.DiningFlag,pack:x.TrainInfo.PackageServiceFlag,note:zh(x.TrainInfo.Note),
+      stops:(x.StopTimes||[]).map(s=>({st:zh(s.StationName),arr:hm(s.ArrivalTime),dep:hm(s.DepartureTime)}))
+    }));
+    $('msg').textContent=`今日班表 ${today}`;
+    try{const bytes=new Blob([JSON.stringify({trains,CITY})]).size;await idbSet('data',{trains,CITY,date:today,ts:Date.now(),bytes});$('msg').textContent+='・已存離線資料 ✅';prog(100,'完成 ✅ 已儲存 '+fmtB(bytes))}
+    catch(e){$('msg').textContent+='（離線儲存失敗）';prog(100,'⚠ 離線儲存失敗')}
+  }catch(e){
+    prog(100,'⚠ 下載失敗：'+e.message);
+    let c=null;try{c=await idbGet('data')}catch(_){}
+    if(c&&c.trains&&c.trains.length){
+      trains=c.trains;CITY=c.CITY||{};
+      $('msg').textContent=`離線資料 ${c.date}（${e.message}）`+(c.date!==today?' ⚠ 非今日班表':'');
+    }else{
+      $('msg').textContent='無法取得資料（'+e.message+'），顯示示範資料';
+      trains=DEMO;if(!Object.keys(CITY).length)CITY={'臺北':'臺北市','臺中':'臺中市','臺南':'臺南市','新竹':'新竹市'};
+    }
+  }
+  LOADING=false;renderOff();
+  init();
+  if(await loadDelay())refreshAll();
+}
+
+// ===== 介面 =====
+function init(){
+  ALL=[...new Set(trains.flatMap(t=>t.stops.map(s=>s.st)))].sort((a,b)=>a.localeCompare(b,'zh-Hant-TW'));
+  const rk=c=>{const i=ORDER.indexOf(c);return i<0?99:i};
+  const cities=[...new Set(ALL.map(n=>CITY[n]||'其他'))].sort((a,b)=>rk(a)-rk(b));
+  ['fc','tc'].forEach(id=>$(id).innerHTML='<option value="">① 選擇縣市</option>'+cities.map(c=>`<option>${c}</option>`).join(''));
+  fillSt('fc','from');fillSt('tc','to');
+  const types=[...new Set(trains.map(t=>t.type))];
+  $('chips').innerHTML=['',...types].map(t=>`<button class="chip${t===TYPE?' on':''}" data-t="${t}">${t||'全部'}</button>`).join('');
+  if(!$('time').value)setNow();
+  render();
+}
+function setNow(){const d=new Date();$('time').value=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function fillSt(c,st,sel){const city=$(c).value,el=$(st);
+  el.disabled=!city;
+  el.innerHTML=city?'<option value="">不限車站</option>'+ALL.filter(n=>(CITY[n]||'其他')===city).map(n=>`<option>${n}</option>`).join(''):'<option value="">請先選擇縣市</option>';
+  if(sel)el.value=sel}
+
+const LISTS={};
+const full=tr=>({tr,i:0,j:tr.stops.length-1,dep:tr.stops[0]?.dep||'',arr:tr.stops.at(-1)?.arr||''});
+function cards(rows,L,f,t){LISTS[L]=rows;
+  return rows.map((r,k)=>{const x=r.tr;return `
+    <article class="card train" data-l="${L}" data-k="${k}" style="--c:${typeColor(x.type)}">
+      <div class="ty">${x.type}<small>${x.no} 次</small></div>
+      <div><div class="tm">${r.dep}<i>→</i>${r.arr}</div>
+        <div class="mut">${f||t?`${f||x.from}→${t||x.to} · `:`${x.from}→${x.to} · `}${dur(mins(r.dep,r.arr))}</div></div>
+      <div class="rt">${delayBadge(x.no)}<span class="mut">${flag(x.wheel)?accShort(x):''}${flag(x.bike)?' 🚲':''}${flag(x.dining)?' 🍱':''}${flag(x.pack)?' 🧳':''}</span></div>
+    </article>`}).join('')}
+
+function render(){
+  const f=$('from').value,t=$('to').value,tm=$('time').value,no=$('no').value.trim();
+  let rows=[];
+  for(const tr of trains){
+    if(TYPE&&tr.type!==TYPE)continue;
+    if(no&&tr.no!==no)continue;
+    const i=f?tr.stops.findIndex(s=>s.st===f):0,j=t?tr.stops.findIndex(s=>s.st===t):tr.stops.length-1;
+    if(f&&i<0)continue;if(t&&j<0)continue;if(f&&t&&i>=j)continue;
+    rows.push({tr,i,j,dep:tr.stops[i]?.dep||'',arr:tr.stops[j]?.arr||''});
+  }
+  rows=rows.filter(r=>!tm||r.dep>=tm).sort((a,b)=>a.dep.localeCompare(b.dep));
+  $('count').textContent=`共 ${rows.length} 班`+(DT?`・誤點資料 ${new Date(DT).toTimeString().slice(0,5)}`:'');
+  $('list').innerHTML=rows.length?cards(rows.slice(0,SHOW),'list',f,t)+(rows.length>SHOW?`<p style="text-align:center"><button id="more" class="alt">顯示更多（還有 ${rows.length-SHOW} 班）</button></p>`:'')
+    :'<div class="card empty">沒有符合的班次，試試調整時間或車種 🔍</div>';
+  renderLobby();
+}
+function renderNo(){const q=$('no2').value.trim();
+  const rows=q?trains.filter(t=>t.no.startsWith(q)).sort((a,b)=>a.no-b.no).slice(0,50).map(full):[];
+  $('nolist').innerHTML=rows.length?cards(rows,'nolist'):`<div class="card empty">${q?'找不到這個車次':'輸入車次號碼開始查詢 🔢'}</div>`}
+function renderDelay(){
+  const late=Object.entries(DELAY).filter(([n,d])=>d.m>0).sort((a,b)=>b[1].m-a[1].m).map(([n])=>trains.find(t=>t.no===n)).filter(Boolean).map(full);
+  $('dlinfo').textContent=DT?`更新 ${new Date(DT).toTimeString().slice(0,5)}・誤點 ${late.length} 班`:'離線中或尚未取得誤點資料';
+  $('dlist').innerHTML=!DT?'<div class="card empty">📴 無法取得即時誤點，請連網後按「更新」</div>'
+    :late.length?cards(late,'dlist'):'<div class="card empty">🎉 目前沒有誤點通報的列車</div>'}
+let SVGN=0;
+const LV={
+ emu3k:{b:'#f3f4f6',wf:'#1f2937',s:'#d1d5db',sh:2,t:'#9ca3af',n:'b',p:1,re:'#dc2626'},
+ tar:{b:'#f8fafc',w:'#374151',wf:'#5a7596',s:'#f97316',sh:3,t:'#9ca3af',n:'b',p:1},
+ puy:{b:'#f8fafc',s:'#dc2626',t:'#b91c1c',n:'b',p:1,nc:'#dc2626'},
+ pp:{b:'#cfd6de',w:'#f97316',s:'#dc2626',sh:2.5,t:'#dc2626',n:'l',p:1,L:'#cfd6de'},
+ dr:{b:'#d5dbe1',s:'#f97316',t:'#dc2626',n:'f',p:0},
+ gg:{b:'#f59e0b',s:'#fde68a',t:'#92400e',n:'l',p:1,L:'#ea580c'},
+ fx:{b:'#2563eb',s:'#f8fafc',t:'#1e3a8a',n:'l',p:0,L:'#475569'},
+ loc:{b:'#e5e7eb',s:'#22a45d',t:'#15803d',n:'b',p:1},
+ e500:{b:'#ea580c',s:'#111827',t:'#111827',n:'l',p:1,L:'#ea580c',only:1}};
+function trainSVG(id){const v=LV[id],u='t'+(++SVGN);
+  const car=(x,w,d,loco)=>{const c='c'+u+x,head=d.length>40&&!loco;
+    let g=`<clipPath id="${c}"><path d="${d}"/></clipPath><path d="${d}" fill="${loco||v.b}"/><g clip-path="url(#${c})">`;
+    if(!loco){if(v.w)g+=`<rect x="${x}" y="34" width="${w}" height="18" fill="${v.w}"/>`;g+=`<rect x="${x}" y="56" width="${w}" height="${v.sh||7}" fill="${v.s}"/><rect x="${x}" y="64" width="${w}" height="2.5" fill="${v.t}"/>`;
+      const e=x+w-(head?(v.n=='b'?70:40):24);
+      for(let i=x+26;i<e-13;i+=17)g+=`<rect x="${i}" y="37" width="13" height="12" rx="2" fill="${v.wf||'#26374d'}"/><rect x="${i}" y="37" width="13" height="4" rx="2" fill="#fff" opacity=".2"/>`;
+      [x+5,e-9].forEach(dx=>g+=`<rect x="${dx}" y="35" width="14" height="30" rx="2" fill="#000" opacity=".13"/><line x1="${dx+7}" y1="35" x2="${dx+7}" y2="65" stroke="#000" opacity=".25"/>`)}
+    g+=(v.re&&!loco?`<rect x="${x}" y="30" width="22" height="5" fill="${v.re}"/>`+(head?'':`<rect x="${x+w-22}" y="30" width="22" height="5" fill="${v.re}"/>`):'')+`<rect x="${x}" y="30" width="${w}" height="42" fill="url(#${u})"/></g><rect x="${x+8}" y="26" width="${w-16}" height="4" rx="2" fill="#94a3b8"/><rect x="${x+10}" y="72" width="${w-20}" height="5" rx="1" fill="#334155"/>`;
+    [x+18,x+w-(loco?24:18)].forEach(cx=>g+=`<rect x="${cx-14}" y="76" width="28" height="4" rx="1" fill="#1e293b"/>`+[-8,8].map(o=>`<circle cx="${cx+o}" cy="83" r="5" fill="#0f172a"/><circle cx="${cx+o}" cy="83" r="1.8" fill="#94a3b8"/>`).join(''));
+    return g},
+  pan=cx=>`<path d="M${cx-14} 26L${cx-4} 12H${cx+4}L${cx+14} 26M${cx-9} 12h18" stroke="#334155" stroke-width="2" fill="none"/>`,
+  R=(x,w)=>`M${x} 30H${x+w}V72H${x}Z`,
+  loco=(x,w)=>{const d=`M${x} 30H${x+w-10}L${x+w} 40V72H${x}Z`;let g=car(x,w,d,v.L)+(v.w?`<rect x="${x}" y="34" width="${w-12}" height="18" fill="${v.w}"/>`:'');
+    g+=`<path d="M${x+w-32} 36h19l6 6v9h-25z" fill="#1f2a3a"/><path d="M${x+w-32} 36h19l2 3h-21z" fill="#fff" opacity=".25"/>`;
+    for(let i=0;i<4;i++)g+=`<rect x="${x+12+i*11}" y="38" width="7" height="18" rx="1" fill="#000" opacity=".22"/>`;
+    g+=`${v.w?`<rect x="${x}" y="56" width="${w}" height="2.5" fill="${v.s}"/><rect x="${x}" y="64" width="${w}" height="2.5" fill="${v.s}"/>`:`<rect x="${x}" y="60" width="${w}" height="4" fill="#111827" opacity=".7"/>`}<circle cx="${x+w-3}" cy="68" r="2.5" fill="#fde047"/>`+(v.p?pan(x+w*.4):'');return g},
+  head=(x,w)=>{if(v.n=='f'){const d=`M${x} 30H${x+w-14}L${x+w} 38V72H${x}Z`;return car(x,w,d)+`<path d="M${x+w-34} 34H${x+w-16}L${x+w-4} 40V56H${x+w-34}Z" fill="#1f2a3a"/><circle cx="${x+w-4}" cy="64" r="2.5" fill="#fde047"/>`}
+    const d=`M${x} 30H${x+w-60}C${x+w-24} 30 ${x+w} 46 ${x+w} 66V72H${x}Z`;
+    return car(x,w,d)+(v.nc?`<path d="M${x+w-60} 30C${x+w-24} 30 ${x+w} 46 ${x+w} 66V72H${x+w-60}Z" fill="${v.nc}"/>`:'')+`<path d="M${x+w-64} 34H${x+w-58}C${x+w-30} 34 ${x+w-14} 46 ${x+w-12} 58H${x+w-64}Z" fill="#1f2a3a"/><path d="M${x+w-64} 34H${x+w-58}C${x+w-44} 34 ${x+w-34} 38 ${x+w-28} 44H${x+w-64}Z" fill="#fff" opacity=".18"/><circle cx="${x+w-5}" cy="64" r="3" fill="#fde047"/>`};
+  let o='';
+  if(v.only)o=loco(130,260)+`<text x="250" y="52" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">E500</text>`;
+  else if(v.L){o=car(6,130,R(6,130))+car(139,130,R(139,130))+car(272,130,R(272,130))+loco(405,110)+(v.p?'':'')}
+  else{o=car(6,150,R(6,150))+car(159,150,R(159,150))+head(312,190);if(v.p)o+=pan(234)}
+  return `<svg viewBox="0 0 520 96" role="img" aria-label="列車外觀示意圖"><defs><linearGradient id="${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient></defs>${o}<rect x="0" y="88" width="520" height="2" fill="#94a3b8"/></svg>`}
+const ENC=[
+{id:'emu3k',n:'EMU3000 新自強號',c:'#0f766e',k:'emu',st:'現役',q:'EMU3000型電聯車',m:'emu3000',
+ t:'台鐵新一代城際電聯車，逐步取代 PP 自強號，並於 2022/3/29 接替「紅斑馬」EMU1200。12 節編組、全車坐式馬桶，部分班次試辦自由座並有總量管制。',
+ f:[['編組','12 節（官方編組表）'],['塗裝','車身白色，駕駛艙為黑色玻璃搭配白色車頭；車廂連接處上緣有彩色邊條（依編組為紅、綠、藍，特仕車為四色混搭）'],['特色','第 6 車為騰雲座艙（商務座艙）'],['票證','2026/7/1 起持悠遊卡、一卡通、TPASS 不可搭乘，誤乘加收 50% 票價']]},
+{id:'tar',n:'太魯閣號',c:'#7c3aed',k:'emu',st:'現役',q:'TEMU1000型電聯車',m:'taroko',
+ t:'台鐵第一種傾斜式列車，過彎時車體傾斜以維持速度與舒適，主要行駛東部幹線。全車對號、不得無座。',
+ f:[['型號','TEMU1000'],['製造','日立製作所（Hitachi），設計源自 JR 九州 885 系'],['啟用','2007 年'],['編組','8 節，兩端為駕駛車廂（TED）'],['塗裝','白底，車窗周圍為灰黑與橘色色帶']]},
+{id:'puy',n:'普悠瑪號',c:'#c2410c',k:'emu',st:'現役',q:'TEMU2000型電聯車',m:'puyuma',
+ t:'第二代傾斜式列車，編組與太魯閣同為 8 節，主要行駛東部幹線。全車對號、不得無座。',
+ f:[['型號','TEMU2000'],['製造','日本車輛製造（Nippon Sharyo）'],['啟用','約 2013 年'],['編組','8 節（官方編組表全為 40TED2000）'],['塗裝','白底搭配鮮紅色色帶，車頭整面紅色（台鐵已規劃換新塗裝）']]},
+{id:'pp',n:'PP 推拉式自強號',c:'#dc2626',k:'loco',st:'現役',q:'推拉式自強號',m:'pp',
+ t:'由電力機車推拉 12 節客車的自強號，西部幹線主力之一。車廂由 PPC（含車長室）、PPT（一般）、PPH（無障礙）等型號組成；2024 年起新購 E500 電力機車逐步接手牽引。',
+ f:[['塗裝','不鏽鋼銀色車身，車窗帶橘色，窗下與車體下緣為紅色細線'],['編組','12 節：第 1 車 PPC、第 3／8 車 PPH，第 12 車為親子或多功能車廂'],['輪椅位','過去每列僅約 4 個輪椅座位；多功能車廂可容納 10～12 位輪椅'],['票證','可持電子票證搭乘（站票未設總量管制，台鐵研議改善）'],['班次','2026/7/1 起每日 38 列次，全數由 E500 牽引']]},
+{id:'dr',n:'柴聯自強號 DR3100',c:'#be123c',k:'emu',st:'現役',q:'DR3100型柴聯車',m:'dr31',
+ t:'3 輛一組的柴油動力自強號，是台鐵第一款出廠即配自動門的柴聯城際列車。2023/4/26 退役的 DR2800／2900／3000 則是更早的柴聯自強。',
+ f:[['塗裝','不鏽鋼車身搭配橘色系色帶'],['製造','日本車輛製造、唐榮鐵工廠'],['啟用','1998/8/1'],['編組','DR3100＋DR3150（發電車）＋DR3100；共 10 組 30 輛'],['時速','最高 110 km/h'],['座位','DR31xx 單號車 44、雙號車 46、DR3150 52']]},
+{id:'gg',n:'莒光號',c:'#d97706',k:'loco',st:'現役（汰換中）',q:'莒光號',m:'gg',
+ t:'曾是台鐵最高級的對號客車，由機車牽引客車。因車齡老化，2026/7/1 起每日班次由 11 列次減為 7 列次，部分改由 EMU3000、普悠瑪接替；台鐵規劃 2028 年底前全數退役。',
+ f:[['編組','機車＋8 節（官方圖示）'],['牽引','新購 E500 電力機車也將擔任莒光牽引'],['無障礙','第 1 車：輪椅空間＋坐式無障礙廁所']]},
+{id:'fx',n:'復興號',c:'#64748b',k:'old',st:'已除役',q:'復興號',m:'fx',
+ t:'1981/3/1 起加入營運（最初掛在莒光編組，稱「莒興號」），同年 12/28 唐榮鐵工廠完成 120 輛車廂後正式成立復興號編組。2022/3/29 末班 605 次（花蓮→樹林）後除役，改由 EMU900、EMU500 以區間車形式行駛。',
+ f:[['服務','逾 40 年'],['末班','2022/3/29，605 次']]},
+{id:'loc',n:'區間車（電聯車）',c:'#2563eb',k:'emu',st:'現役',q:'臺鐵EMU900型電聯車',
+ t:'EMU900 為北部區間車主力，南部因月台長度暫由少數 EMU500／600／700／800 疏運；台鐵規劃 EMU500、600 於數年內逐步淘汰。',
+ f:[['EMU900','韓國現代樂鐵製造、10 節編組，銀綠塗裝，有「最美區間車」之稱；輪椅位共 8 個，集中在第 6 車']],
+ d:[{l:'EMU800（8 節）',n:8,a:[1,8]},{l:'EMU900（10 節）',n:10,a:[6],t:'8 個輪椅位集中在第 6 車'},{l:'EMU400／500／600／700（官方圖示 8 節編組）',n:8,a:[3,6],t:'設於 ET 拖車；4 節編組則為該組中的 ET 車'}]},
+{id:'e500',n:'E500 電力機車',c:'#ea580c',k:'loco',st:'現役',q:'E500型電力機車',
+ t:'台鐵向日本東芝採購的新電力機車，2024 年首航牽引 PP 自強號 121 次（七堵→屏東）。水冷式散熱，動力較舊款高 1.4～1.8 倍，並有 ATP 故障時的限速備援系統；橘色塗裝搭配黑色線條。',
+ f:[['任務','牽引 PP 自強號、莒光號與觀光列車']]}];
+const RET=[['EMU1200「紅斑馬」自強號','服役 36 年，2022/3/29 除役，由 EMU3000 取代'],['復興號','2022/3/29 末班 605 次後除役'],['DR2800／2900／3000 柴聯自強號','服務逾 40 年，2023/4/26 退役'],['EMU100 自強號','首款自強號電聯車，使用約 30 年，2009/6/15 退出營運']];
+const QCAT=['內容','歷史','規定','無障礙','車型辨別'];
+const QB=`內容|PP 自強號的「PP」是什麼意思？|推拉（Push-Pull）|平行動力|優先通行|雙層客車
+內容|PP 自強號一列通常由幾節客車組成？|12 節|8 節|10 節|6 節
+內容|太魯閣號的設計源自日本哪一款列車？|JR 九州 885 系|新幹線 700 系|JR 東日本 E5 系|小田急 3000 形
+內容|太魯閣號是台鐵第一款什麼類型的列車？|傾斜式列車|雙層列車|柴油列車|推拉式列車
+內容|EMU3000 的外觀設計概念是？|靜謐的移動（Silent Flow）|極速飛馳|山海傳奇|復古經典
+內容|EMU3000 的商務車廂叫什麼名字？|騰雲座艙|雲端座艙|尊榮車廂|貴賓座艙
+內容|EMU3000 的騰雲座艙位於第幾車？|第 6 車|第 1 車|第 12 車|第 3 車
+內容|EMU3000 一般車廂座椅邊緣的小標籤是什麼顏色？|藍色|橘色|紅色|綠色
+內容|EMU3000 騰雲座艙的橘色標籤，是傳承哪一種傳統車種的車色？|莒光號|復興號|普快車|柴聯自強號
+內容|EMU3000 特仕車的車身邊條由哪幾種顏色混搭？|紅、藍、綠、黃|紅、白、藍|黑、白、灰、紅|橘、紫、藍、綠
+內容|EMU3000 特仕車邊條中，黃色象徵什麼？|豐饒|熱情|知性|靜謐
+內容|EMU3000 特仕車邊條中，紅色象徵什麼？|熱情|知性|靜謐|豐饒
+內容|EMU3000 的日籍設計師是誰？|野末壯|隈研吾|安藤忠雄|水戶岡銳治
+內容|EMU3000 全車的廁所是哪一種馬桶？|坐式|蹲式|依車廂而異|沒有廁所
+內容|EMU3000 最高營運時速為？|130 km/h|150 km/h|110 km/h|160 km/h
+內容|EMU3000 一組共有多少座位？|538 席|436 席|600 席|384 席
+內容|台鐵一共採購多少輛 EMU3000？|600 輛|520 輛|400 輛|300 輛
+內容|EMU3000 官方編組中，第 3、7 車的車型代號是？|EP-W1 與 EP-W2|EDC 與 EM1|ET 與 EP|EM2 與 EM1-B
+內容|普悠瑪號的名稱源自哪個族群的語言？|卑南族語|阿美族語|泰雅族語|排灣族語
+內容|普悠瑪號的塗裝特徵是？|白底紅色色帶、車頭整面紅色|白底藍色色帶、車頭藍色|銀色車身橘色色帶|黑白配紅線
+內容|太魯閣號車窗附近的色帶是哪些顏色？|灰黑色與橘色|紅色與白色|藍色與黃色|綠色與銀色
+內容|PP 自強號不鏽鋼客車的車窗帶是什麼顏色？|橘色|藍色|綠色|紫色
+內容|太魯閣號編組兩端的駕駛車廂代號是？|TED|TEM|TEP|TET
+內容|太魯閣號的營運最高時速為？|130 km/h|150 km/h|110 km/h|160 km/h
+內容|太魯閣號一組列車全長約多少？|167 公尺|245 公尺|120 公尺|200 公尺
+內容|EMU3000 一組列車全長約多少？|246 公尺|167 公尺|200 公尺|300 公尺
+內容|DR3100 柴聯自強號最高營運時速約為？|110 km/h|130 km/h|150 km/h|90 km/h
+內容|DR3100 柴聯自強號最多可幾組併掛運轉？|5 組|2 組|3 組|10 組
+內容|DR3100 柴聯自強號目前共有幾組？|10 組（30 輛）|6 組（18 輛）|15 組（45 輛）|20 組（60 輛）
+內容|DR3100 編組中的發電車（電源拖車）是哪一輛？|DR3150|DR3101|DR3103|DR1003
+內容|E500 電力機車的外觀塗裝是？|亮橘色搭配黑色線條|銀色搭配紅線|藍白相間|黑白配紅
+內容|E500 的動力比舊款電力機車約高出多少？|1.4～1.8 倍|10%|3 倍以上|幾乎相同
+內容|E500 電力機車使用哪種散熱方式？|水冷式|氣冷式|油冷式|自然散熱
+內容|E1000 電力機車的原產國是？|南非|日本|韓國|義大利
+內容|E1000 電力機車的外觀特色是？|台鐵第一款流線型車頭|台鐵第一款柴電機車|台鐵第一款雙駕駛台機車|台鐵第一款傾斜機車
+內容|EMU900 有什麼美稱？|最美區間車|最快區間車|最長區間車|最老區間車
+內容|EMU900 的塗裝色系是？|銀色與綠色|紅色與白色|藍色與橘色|黑色與金色
+內容|EMU900 一組共有多少座位？|436 席|538 席|250 席|620 席
+內容|EMU900 一組可容納幾輛自行車？|12 輛|4 輛|24 輛|無法放置
+內容|EMU900 的乘務員休息室設在第幾車？|第 5 車|第 1 車|第 10 車|第 3 車
+內容|台鐵向現代樂鐵一共採購多少輛 EMU900？|520 輛|120 輛|300 輛|600 輛
+歷史|復興號末班車是第幾次列車？|605 次|691 次|642 次|611 次
+歷史|復興號末班車的行駛區間是？|花蓮→樹林|臺北→高雄|臺東→花蓮|基隆→新竹
+歷史|復興號最初掛在莒光號編組時，被稱為？|莒興號|莒光復|興莒號|復光號
+歷史|復興號的車廂由哪家工廠生產？|唐榮鐵工廠|台灣車輛|現代精工|日立製作所
+歷史|復興號除役後，原班次改以什麼形式行駛？|區間車|太魯閣號|PP 自強號|莒光號
+歷史|「紅斑馬」是哪一型列車的暱稱？|EMU1200 自強號|EMU3000|DR3100|TEMU1000
+歷史|紅斑馬服役多久後除役？|36 年|20 年|50 年|12 年
+歷史|台鐵第一款自強號電聯車是？|EMU100|EMU300|EMU1200|EMU3000
+歷史|EMU100 自強號使用約多久？|30 年|10 年|50 年|5 年
+歷史|2023 年 4 月退役的柴聯自強號包含哪三型？|DR2800、DR2900、DR3000|DR1000、DR2800、DR3100|DR3100、DR3200、DR3000|DR2900、DR3100、DR3000
+歷史|DR2800／2900／3000 柴聯自強號服務約多久？|逾 40 年|約 10 年|約 20 年|逾 60 年
+歷史|柴聯自強號是哪一條幹線上第一款冷氣自強號？|東部幹線|西部幹線|南迴線|平溪線
+歷史|2026 年 7 月 1 日起，莒光號每日班次由 11 列次減為幾列次？|7 列次|5 列次|9 列次|3 列次
+歷史|台鐵規劃莒光號在何時前全數退役？|2028 年底|2026 年底|2030 年底|2035 年底
+歷史|PP 自強號的快遞車廂業務於何時終止？|2016 年 1 月 1 日|2010 年 1 月 1 日|2020 年 1 月 1 日|2004 年 6 月 1 日
+歷史|台鐵自何時起改制為「臺灣鐵路公司」營運？|2024 年 1 月 1 日|2020 年 1 月 1 日|2018 年 1 月 1 日|2026 年 7 月 1 日
+歷史|E1000 電力機車於何時退出定期營運？|2026 年 7 月 1 日|2024 年 1 月 1 日|2022 年 3 月 29 日|至今仍在定期營運
+規定|2026 年 7 月 1 日起，持悠遊卡誤搭 EMU3000，會被加收多少票價？|50%|10%|100%|不會加收
+規定|下列哪一種自強號可以持電子票證搭乘？|PP 自強號|太魯閣號|普悠瑪號|EMU3000
+規定|太魯閣號與普悠瑪號的乘車規定是？|全車對號，不得無座|可購自由座|只賣站票|僅週末對號
+規定|台鐵客服專線（市話）是？|0800-765-888|0800-000-123|1999|1922
+規定|台鐵 24 小時緊急通報電話（軌道障礙物）是？|1933|1999|119|1922
+規定|台鐵 e 訂通是什麼？|台鐵訂票與時刻查詢 App|台鐵便當外送平台|列車調度系統|月台票販賣機
+無障礙|PP 自強號標準編組中，第 3、8 車（含無障礙座椅與廁所）的型號是？|PPH|PPT|PPC|PPP
+無障礙|PP 自強號第 12 車若為多功能車廂，型號是？|40PPM2500|40PPP2500|35PPH1300|35PPC1400
+無障礙|PP 自強號第 12 車若為親子車廂，型號是？|40PPP2500|40PPM2500|35PPT1000|35PPH1300
+無障礙|PP 多功能車廂（40PPM2500）提供哪些設施？|輪椅停放區（含固定帶）與 10 組自行車架|商務座椅與吧台|臥鋪床位|行李託運櫃
+無障礙|PP 自強號改造前，每列僅約幾個輪椅座位？|4 個|12 個|1 個|20 個
+無障礙|親子車廂有什麼特別設計？|座位旁可固定嬰幼兒推車|附輪椅升降梯|設有吸菸區|提供臥鋪`.trim().split('\n');
+
+const NM={emu3k:'EMU3000 新自強號',tar:'太魯閣號（TEMU1000）',puy:'普悠瑪號（TEMU2000）',pp:'PP 推拉式自強號',dr:'柴聯自強號 DR3100',gg:'莒光號',fx:'復興號',loc:'EMU900 區間車',e500:'E500 電力機車'};
+const WCQ=[['太魯閣號','第 1、8 車'],['普悠瑪號','第 1、8 車'],['EMU3000 新自強號','第 3、7 車'],['PP 自強號（標準編組）','第 3、8 車'],['莒光號（FPK11300～11600 型）','第 1 車'],['EMU900 區間車','第 6 車'],['EMU800 區間車','第 1、8 車'],['柴聯自強號 DR3100','單號車（DR31xx）後部']];
+const WCP=['第 1、8 車','第 3、7 車','第 3、8 車','第 1 車','第 6 車','單號車（DR31xx）後部','第 12 車','第 5 車'];
+const NUQ=[['太魯閣號',8,'節'],['普悠瑪號',8,'節'],['EMU3000 新自強號',12,'節'],['PP 自強號',12,'節'],['EMU900 區間車',10,'節'],['EMU800 區間車',8,'節'],['柴聯自強號 DR3100（單組）',3,'輛']];
+const MKQ=[['太魯閣號（TEMU1000）','日立製作所'],['EMU3000 新自強號','日立製作所'],['EMU900 區間車','韓國現代樂鐵'],['E500 電力機車','日本東芝'],['柴聯自強號 DR3100','日本車輛製造與唐榮鐵工廠'],['E1000 電力機車','南非聯邦鐵路客貨車公司']];
+const MKP=['日立製作所','韓國現代樂鐵','日本東芝','日本車輛製造與唐榮鐵工廠','南非聯邦鐵路客貨車公司','川崎重工','德國西門子','法國阿爾斯通'];
+const YRQ=[['復興號是哪一年加入營運？',1981],['復興號末班車是哪一年行駛？',2022],['DR2800／2900／3000 柴聯自強號是哪一年退役？',2023],['太魯閣號是哪一年開始營運？',2007],['DR3100 柴聯自強號是哪一年啟用？',1998],['EMU3000 是哪一年正式營運？',2021],['EMU900 是哪一年首航？',2021],['E500 電力機車是哪一年首航？',2024],['紅斑馬 EMU1200 是哪一年除役？',2022],['EMU100 自強號是哪一年退出營運？',2009],['普悠瑪號是哪一年投入營運？',2013]];
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=(a,n,ex)=>shuf(a.filter(x=>x!==ex)).slice(0,n);
+function bank(){const o=[];
+  QB.forEach(l=>{const [c,q,a,...d]=l.split('|');o.push({c,q,a,o:[a,...d]})});
+  Object.keys(NM).forEach(k=>o.push({c:'車型辨別',q:'依百科示意圖，這是哪一種車？',svg:k,a:NM[k],o:[NM[k],...pick(Object.keys(NM),3,k).map(x=>NM[x])]}));
+  WCQ.forEach(([n,a])=>o.push({c:'無障礙',q:n+'的無障礙車廂（輪椅空間）位於哪裡？',a,o:[a,...pick(WCP,3,a)]}));
+  NUQ.forEach(([n,v,u])=>o.push({c:'內容',q:n+'一組有幾'+u+'？',a:v+' '+u,o:[v,...pick([3,4,6,8,10,12],3,v)].map(x=>x+' '+u)}));
+  MKQ.forEach(([n,a])=>o.push({c:'內容',q:n+'的製造商（廠）是？',a,o:[a,...pick(MKP,3,a)]}));
+  YRQ.forEach(([q,y])=>o.push({c:'歷史',q,a:y+' 年',o:[y,...pick([y-1,y+1,y-2,y+2,y+3,y-3,y+5],3)].map(x=>x+' 年')}));
+  return o.filter(x=>new Set(x.o).size===4)}
+let QS=null,QCUR='';
+function qHome(){const B=bank();let b={};try{b=JSON.parse(localStorage.qbest||'{}')}catch(e){}
+  const cats=['',...QCAT];
+  $('qz').innerHTML=`<div class="card pad"><h3 style="margin:0 0 .4rem">🧠 台鐵小測驗</h3>
+    <p class="mut">題庫共 <b>${B.length}</b> 題（內容、歷史、規定、無障礙、車型辨別），每次隨機抽 10 題，四選一。${b.s!=null?'最佳成績：'+b.s+' / '+b.t+'。':''}</p>
+    <div class="chips" style="flex-wrap:wrap">${cats.map(c=>`<button class="chip${c===QCUR?' on':''}" data-qc="${c}">${c||'綜合'}（${c?B.filter(x=>x.c===c).length:B.length}）</button>`).join('')}</div>
+    <p style="margin-top:.8rem"><button id="qstart">▶ 開始測驗</button></p></div>`}
+function qStart(){const B=bank(),P=QCUR?B.filter(x=>x.c===QCUR):B;QS={list:shuf(P).slice(0,10),i:0,s:0,w:[],done:false};qShow()}
+function qShow(){const q=QS.list[QS.i];QS.done=false;q.o2=shuf(q.o);const n=QS.list.length;
+  $('qz').innerHTML=`<div class="card pad"><div class="mut">第 ${QS.i+1} / ${n} 題・${q.c}・目前 ${QS.s} 分</div>
+    <div class="pg"><i style="width:${QS.i/n*100}%"></i></div>
+    ${q.svg?`<div class="qsvg">${trainSVG(q.svg)}</div>`:''}
+    <h3 style="font-size:1.1rem;margin:.6rem 0">${q.q}</h3>
+    ${q.o2.map((t,k)=>`<button class="opt" data-qa="${k}">${'ABCD'[k]}．${t}</button>`).join('')}<div id="qfb"></div></div>`}
+function qAns(k){if(QS.done)return;QS.done=true;const q=QS.list[QS.i],pick=q.o2[k],ok=pick===q.a;
+  if(ok)QS.s++;else QS.w.push(q);
+  document.querySelectorAll('.opt').forEach((b,i)=>{b.disabled=true;if(q.o2[i]===q.a)b.classList.add('ok');else if(i==k)b.classList.add('no')});
+  const last=QS.i==QS.list.length-1;
+  $('qfb').innerHTML=`<p><b>${ok?'✅ 答對了！':'❌ 答錯了，正確答案：'+q.a}</b></p><button id="qnext">${last?'查看成績':'下一題 ›'}</button>`}
+function qEnd(){const n=QS.list.length,s=QS.s;let b={};try{b=JSON.parse(localStorage.qbest||'{}')}catch(e){}
+  if(n==10&&(b.s==null||s>b.s))try{localStorage.qbest=JSON.stringify({s,t:n})}catch(e){}
+  const t=s>=9?'🏆 鐵道達人':s>=7?'🚆 資深乘客':s>=4?'🎫 一般旅客':'🌱 繼續加油';
+  $('qz').innerHTML=`<div class="card pad"><h3 style="margin:0">${t}</h3><div class="big">${s} <span>/ ${n} 題答對</span></div>
+    ${QS.w.length?`<div class="sec" style="margin:.6rem 0 .2rem">答錯的題目</div>${QS.w.map(q=>`<div class="wr">${q.q}<br><b style="color:var(--ok)">正確答案：${q.a}</b></div>`).join('')}`:'<p>全部答對，太厲害了！</p>'}
+    <p style="margin-top:.8rem"><button id="qagain">↻ 再測一次</button> <button class="alt" id="qback">回題庫</button></p></div>`}
+document.addEventListener('click',e=>{const t=e.target;
+  const a=t.closest('[data-qa]');if(a){qAns(+a.dataset.qa);return}
+  const c=t.closest('[data-qc]');if(c){QCUR=c.dataset.qc;qHome();return}
+  if(t.id==='qstart'||t.id==='qagain'){qStart();return}
+  if(t.id==='qback'){qHome();return}
+  if(t.id==='qnext'){QS.i++;QS.i<QS.list.length?qShow():qEnd()}});
+const WK={};
+async function wikiInfo(q){if(q in WK)return WK[q];
+  try{const r=await fetch('https://zh.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=1&prop=pageimages|extracts&piprop=thumbnail&pithumbsize=640&exintro=1&explaintext=1&exsentences=3&format=json&origin=*&gsrsearch='+encodeURIComponent(q));
+    const p=Object.values((await r.json()).query.pages)[0];return WK[q]={t:p.title,img:p.thumbnail&&p.thumbnail.source,x:p.extract}}catch(e){return WK[q]=null}}
+function renderVeh(){
+  $('vnav').innerHTML=ENC.map(e=>`<a href="#enc" data-j="${e.id}">${e.n}</a>`).join('')+'<a href="#veh" data-j="ret">已退役</a>';
+  $('vlist').innerHTML=ENC.map(e=>{const m=e.m?M[e.m]:{d:e.d};return `<article class="card enc" id="e-${e.id}" style="--c:${e.c}">
+    ${trainSVG(e.id)}<h3>${e.n}<small class="${e.st.startsWith('已')?'x':''}">${e.st}</small></h3>
+    <p>${e.t}</p>
+    <div id="ph-${e.id}"></div>
+    ${e.f?`<dl class="kv">${e.f.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`:''}
+    ${m.d?`<h3 style="font-size:0.875rem">♿ 無障礙車廂位置</h3>${diagram(m)}`:`<p class="mut">♿ ${m.access}</p>`}
+    <div class="wk" id="wk-${e.id}"></div></article>`}).join('')+
+   `<article class="card enc" id="e-ret" style="--c:#64748b"><h3>🕰 已退役車種<small class="x">歷史</small></h3><dl class="kv">${RET.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></article>`;
+  ENC.forEach(async e=>{const w=await wikiInfo(e.q);if(!w)return;const u='https://zh.wikipedia.org/wiki/'+encodeURIComponent(w.t);
+    if(w.img)$('ph-'+e.id).innerHTML=`<img loading="lazy" src="${w.img}" alt="${e.n}"><div class="cap">📷 圖片取自維基百科「${w.t}」，授權依該頁說明 · <a href="${u}" target="_blank" rel="noopener">來源 ↗</a></div>`;
+    if(w.x)$('wk-'+e.id).innerHTML=`📖 維基百科摘要：${w.x} <a href="${u}" target="_blank" rel="noopener">閱讀全文 ↗</a>`})}
+document.addEventListener('click',e=>{const a=e.target.closest('[data-j]');if(!a)return;e.preventDefault();const t=$('e-'+a.dataset.j);t&&t.scrollIntoView({behavior:'smooth',block:'start'})});
+
+// ===== 常用路線 =====
+const favs=()=>{try{return JSON.parse(localStorage.favs||'[]')}catch(e){return []}};
+const saveFavs=a=>localStorage.favs=JSON.stringify(a);
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',1800)}
+function addFav(){const f=$('from').value,t=$('to').value;
+  if(!f||!t)return toast('請先選好起站與迄站');
+  const a=favs();if(a.some(x=>x.from===f&&x.to===t))return toast('這條路線已經儲存了');
+  a.push({fc:$('fc').value,from:f,tc:$('tc').value,to:t});saveFavs(a);toast('⭐ 已儲存 '+f+' → '+t);renderFavs()}
+function applyFav(k){const x=favs()[k];if(!x)return;
+  $('fc').value=x.fc;fillSt('fc','from',x.from);$('tc').value=x.tc;fillSt('tc','to',x.to);TYPE='';SHOW=60;$('no').value='';setNow();go('search');init2();render()}
+function init2(){[...$('chips').children].forEach(b=>b.classList.toggle('on',b.dataset.t===''))}
+function favChips(){const a=favs();return a.length?a.map((x,k)=>`<div class="fv" data-fav="${k}">⭐ ${x.from} → ${x.to}</div>`).join(''):'<span class="mut">還沒有常用路線，到「查班次」儲存一條吧</span>'}
+function renderFavs(){
+  $('favbar').innerHTML=favs().length?favChips():'';
+  $('favlist').innerHTML=favs().length?favs().map((x,k)=>`<div class="card fvrow" data-fav="${k}"><span style="font-size:1.625rem">⭐</span>
+    <div class="n">${x.from} → ${x.to}<small>${x.fc||''}${x.fc&&x.tc?' → ':''}${x.tc||''}</small></div>
+    <button class="alt" data-swapfav="${k}">⇄</button><button class="alt" data-delfav="${k}">🗑</button></div>`).join(''):'<div class="card empty">⭐ 還沒有常用路線</div>';
+  $('lobbyfav').innerHTML=favChips();
+  const n=favs().length;$('favn').hidden=!n;$('favn').textContent=n;
+}
+function renderLobby(){renderFavs();
+  const n=Object.values(DELAY).filter(d=>d.m>0).length;$('latn').hidden=!(DT&&n);$('latn').textContent=n;
+  idbGet('data').then(c=>{$('offs').textContent=c?`已存 ${c.date}`:'尚未下載'}).catch(()=>{})}
+async function renderOff(){let c=null;try{c=await idbGet('data')}catch(e){}
+  let q='';try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();q=`<dt>🗄 本網站總用量</dt><dd>${fmtB(e.usage||0)}／上限約 ${fmtB(e.quota||0)}</dd>`}}catch(e){}
+  const kv=x=>`<dl class="kv" style="grid-template-columns:120px 1fr">${x}</dl>`;
+  $('offst').innerHTML=c?kv(`<dt>📦 班表日期</dt><dd><b>${c.date}</b>${c.date!==new Date().toLocaleDateString('zh-TW')?' ⚠ 非今日班表':''}</dd><dt>🕒 更新時間</dt><dd>${c.ts?fmtT(c.ts)+'（'+ago(c.ts)+'）':'未記錄（舊版資料，請按更新）'}</dd><dt>🚆 班次數</dt><dd>${c.trains.length} 班</dd><dt>💾 佔用空間</dt><dd>${c.bytes?fmtB(c.bytes):'約 '+fmtB(new Blob([JSON.stringify(c)]).size)}</dd>${q}`):'📦 尚未儲存離線資料'+(q?kv(q):'');
+  $('clr').disabled=!c}
+
+// ===== 大廳／分頁 =====
+const TITLES={lobby:'',search:'查班次',fav:'常用路線',no:'車次查詢',delay:'即時誤點',veh:'車輛百科',enc:'車輛百科・圖鑑',quiz:'台鐵小測驗',off:'離線資料',set:'設定'};
+const go=v=>{location.hash=v==='lobby'?'':v};
+async function show(){
+  const h=location.hash.slice(1),v=h&&TITLES[h]?h:'lobby';
+  document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));
+  $('home').style.display=v==='lobby'?'none':'block';
+  document.title='台鐵每日班次表'+(TITLES[v]?'・'+TITLES[v]:'');
+  scrollTo(0,0);
+  if(v==='lobby')renderLobby();
+  if(v==='fav')renderFavs();
+  if(v==='no'){renderNo();setTimeout(()=>$('no2').focus(),50)}
+  if(v==='enc')renderVeh();if(v==='quiz')qHome();
+  if(v==='off')renderOff();
+  if(v==='delay'){renderDelay();if(!DT||Date.now()-DT>60000){await loadDelay();renderDelay()}}
+}
+function refreshAll(){render();renderNo();renderDelay()}
+
+async function detail(r){
+  const tr=r.tr,v=vehicleOf(tr),i=r.i,j=r.j,c=typeColor(tr.type);
+  const draw=()=>{const d=delayInfo(tr.no);
+    const ban=!d?`<div class="banner na">📴 離線中，無法顯示誤點資訊</div>`
+      :d.m>0?`<div class="banner late"><span>⚠ 誤點 ${d.m} 分鐘${d.st?`（目前在 ${d.st}）`:''}</span><small>更新 ${new Date(DT).toTimeString().slice(0,5)}</small></div>`
+      :`<div class="banner"><span>✅ 準點${d.live&&d.st?`（目前在 ${d.st}）`:''}</span><small>${d.live?'':'目前無誤點通報・'}更新 ${new Date(DT).toTimeString().slice(0,5)}</small></div>`;
+    $('dlg').innerHTML=`
+    <div class="dh" style="--c:${c}"><div><h2>${tr.type} ${tr.no} 次</h2><div class="mut">${tr.from} → ${tr.to}${tr.dir==0?'・順行':tr.dir==1?'・逆行':''}</div></div><button class="x" onclick="$('dlg').close()">✕</button></div>
+    <div class="db" style="--c:${c}">
+      ${ban}
+      <div class="big">${tr.stops[i]?.st} ${r.dep} <span>→</span> ${tr.stops[j]?.st} ${r.arr}<span>${dur(mins(r.dep,r.arr))}</span></div>
+      <div class="tags">
+        <span class="tag ${flag(tr.wheel)?'y':''}">♿ 輪椅 ${flag(tr.wheel)?'有':'—'}</span>
+        <span class="tag ${flag(tr.bike)?'y':''}">🚲 自行車 ${flag(tr.bike)?'有':'—'}</span>
+        <span class="tag ${flag(tr.baby)?'y':''}">🍼 哺乳室 ${flag(tr.baby)?'有':'—'}</span>
+        <span class="tag ${flag(tr.dining)?'y':''}">🍱 餐車 ${flag(tr.dining)?'有':'—'}</span>
+        <span class="tag ${flag(tr.pack)?'y':''}">🧳 行李 ${flag(tr.pack)?'有':'—'}</span>
+        ${LINES[tr.line]&&tr.line?`<span class="tag">${LINES[tr.line]}</span>`:''}${flag(tr.daily)?'<span class="tag">每日行駛</span>':''}
+      </div>
+      ${tr.note?`<p class="mut">備註：${tr.note}</p>`:''}
+      <h3>🚃 車型與編組</h3>
+      <dl class="kv"><dt>車型</dt><dd>${v.model}</dd><dt>節數</dt><dd>${v.cars}</dd><dt>殘障車廂</dt><dd>${v.access}</dd></dl>
+      ${v.d?`<h3>♿ 殘障車廂位置（綠色，編號以車廂標示為準）</h3>${diagram(v)}`:''}
+      <p class="mut" style="font-size:0.75rem">※ 車型／節數／車廂位置為依車種整理的參考值，區間車與自強號可能混用不同車型，請以台鐵公告為準。</p>
+      <h3>🕒 停靠站時刻（亮色為你查詢的區段）</h3>
+      <div class="tl">${tr.stops.map((s,k)=>`<div class="st${k>=i&&k<=j?' in':''}${k==i||k==j?' end':''}"><span>${s.st}</span><span>${s.arr&&s.arr!==s.dep?s.arr+' / ':''}${s.dep||s.arr}</span></div>`).join('')}</div>
+      <div class="foot"><span><a href="https://www.railway.gov.tw/tra-tip-web/tip" target="_blank" rel="noopener">台鐵最新公告 ↗</a>　<a href="https://timetables.tw/trainNo" target="_blank" rel="noopener">查此車次車型 ↗</a></span>
+        <button id="rf" class="alt">↻ 更新誤點</button></div>
+    </div>`;
+    $('rf').onclick=async()=>{$('rf').textContent='更新中…';await loadDelay();draw();refreshAll()};
+  };
+  draw();$('dlg').showModal();
+  if(!DT||Date.now()-DT>60000){if(await loadDelay()){draw();refreshAll()}}
+}
+
+// ===== 事件 =====
+document.addEventListener('click',e=>{
+  const t=e.target;
+  if(t.id==='more'){SHOW+=60;render();return}
+  const tr=t.closest('.train');if(tr){detail(LISTS[tr.dataset.l][tr.dataset.k]);return}
+  const g=t.closest('[data-go]');if(g){go(g.dataset.go);return}
+  const sw=t.closest('[data-swapfav]');if(sw){const a=favs(),x=a[sw.dataset.swapfav];a[sw.dataset.swapfav]={fc:x.tc,from:x.to,tc:x.fc,to:x.from};saveFavs(a);renderFavs();return}
+  const dl=t.closest('[data-delfav]');if(dl){const a=favs();a.splice(dl.dataset.delfav,1);saveFavs(a);renderFavs();return}
+  const fv=t.closest('[data-fav]');if(fv)applyFav(+fv.dataset.fav);
+});
+const getFs=()=>+localStorage.fs||100;
+function applyFs(){const v=getFs();document.documentElement.style.setProperty('--u',v/100);$('fs').value=v;$('fsinfo').textContent='目前 '+v+'%。已依螢幕大小自動縮放，100% 即自動大小；可再微調。'}
+const setFs=v=>{localStorage.fs=Math.min(160,Math.max(80,v));applyFs()};
+$('fs').oninput=e=>setFs(+e.target.value);$('fsdn').onclick=()=>setFs(getFs()-10);$('fsup').onclick=()=>setFs(getFs()+10);$('fsrs').onclick=()=>{localStorage.removeItem('fs');applyFs()};
+applyFs();
+$('home').onclick=()=>go('lobby');$('addfav').onclick=addFav;
+$('no2').oninput=renderNo;$('dlrf').onclick=async()=>{$('dlinfo').textContent='更新中…';await loadDelay();renderDelay();renderLobby()};
+addEventListener('hashchange',show);
+$('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;TYPE=b.dataset.t;SHOW=60;
+  [...$('chips').children].forEach(x=>x.classList.toggle('on',x===b));render()};
+$('swap').onclick=()=>{const a=[$('fc').value,$('from').value],b=[$('tc').value,$('to').value];
+  $('fc').value=b[0];fillSt('fc','from',b[1]);$('tc').value=a[0];fillSt('tc','to',a[1]);render()};
+$('fc').onchange=()=>{fillSt('fc','from');SHOW=60;render()};$('tc').onchange=()=>{fillSt('tc','to');SHOW=60;render()};
+['from','to','time','no'].forEach(id=>$(id).oninput=()=>{SHOW=60;render()});
+$('now').onclick=()=>{setNow();render()};
+$('dl2').onclick=()=>{if(!navigator.onLine)return toast('目前離線，無法下載');if(LOADING)return toast('正在下載中…');load()};
+$('clr').onclick=async()=>{if(!confirm('清除已儲存的離線班表？（常用路線與金鑰不會被刪除）'))return;
+  try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction('k','readwrite');t.objectStore('k').delete('data');t.oncomplete=res;t.onerror=()=>rej(t.error)});$('pgw').hidden=true;toast('已清除離線資料')}catch(e){toast('清除失敗')}
+  renderOff();renderLobby()};
+$('dlg').onclick=e=>{if(e.target===$('dlg'))$('dlg').close()};
+$('save').onclick=()=>{localStorage.cid=$('cid').value.trim();localStorage.csec=$('csec').value.trim();TK=null;load()};
+$('cid').value=localStorage.cid||'';$('csec').value=localStorage.csec||'';
+const net=()=>{const o=navigator.onLine;$('net').textContent=o?'● 已連線':'● 離線';$('net').className='pill'+(o?'':' off')};
+addEventListener('online',()=>{net();load()});addEventListener('offline',()=>{net();DT=0;refreshAll()});net();
+
+const DEMO=[
+ {no:'123',type:'自強',dir:0,from:'樹林',to:'臺東',bike:0,wheel:1,baby:0,daily:1,note:'',stops:[{st:'臺北',arr:'08:00',dep:'08:02'},{st:'臺中',arr:'10:05',dep:'10:07'},{st:'臺南',arr:'11:50',dep:'11:52'}]},
+ {no:'408',type:'普悠瑪',dir:0,from:'南港',to:'臺東',bike:0,wheel:1,baby:1,daily:1,note:'',stops:[{st:'臺北',arr:'09:10',dep:'09:12'},{st:'臺中',arr:'11:00',dep:'11:02'}]},
+ {no:'1101',type:'區間',dir:0,from:'基隆',to:'新竹',bike:1,wheel:1,baby:0,daily:1,note:'',stops:[{st:'臺北',arr:'09:30',dep:'09:31'},{st:'新竹',arr:'10:50',dep:'10:50'}]}
+];
+show();load();
+</script>
+</body>
+</html>
