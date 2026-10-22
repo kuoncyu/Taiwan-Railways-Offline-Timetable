@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="20261022a">
+<meta name="app-version" content="20261022c">
 <meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>try{document.documentElement.style.setProperty("--u",(+localStorage.fs||100)/100)}catch(e){}</script>
@@ -182,11 +182,22 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
   <div id="dlist"></div>
 </section>
 
-<section id="v-veh" class="view"><div class="tiles">
-  <div class="card tile" data-go="enc" style="--c:#0f766e"><div class="ico">📖</div><b>車輛百科</b><small>車型・圖文・無障礙車廂</small></div>
-  <div class="card tile" data-go="quiz" style="--c:#7c3aed"><div class="ico">🧠</div><b>台鐵小測驗</b><small>10 題・四選一</small></div></div></section>
+<section id="v-veh" class="view">
+  <div class="sec">📖 基本資料</div><div class="tiles">
+    <div class="card tile" data-go="enc" style="--c:#0f766e"><div class="ico">🚆</div><b>車型</b><small>各車種圖文・無障礙車廂</small></div>
+    <div class="card tile" data-go="code" style="--c:#2563eb"><div class="ico">🔢</div><b>代碼</b><small>車次・型號・車站代碼</small></div></div>
+  <div class="sec">🔥 鐵道迷話題</div><div class="tiles">
+    <div class="card tile" data-go="fan1" style="--c:#0f766e"><div class="ico">🪑</div><b>乘車實用</b><small>選位・票證・便當・安全</small></div>
+    <div class="card tile" data-go="fan2" style="--c:#7c3aed"><div class="ico">⚙</div><b>技術原理</b><small>動力・傾斜・軌距</small></div>
+    <div class="card tile" data-go="fan3" style="--c:#dc2626"><div class="ico">🎨</div><b>名車與塗裝</b><small>豬頭・彩色邊條・彩繪</small></div>
+    <div class="card tile" data-go="fan4" style="--c:#d97706"><div class="ico">🕰</div><b>歷史與時事</b><small>謝幕・退役・公司化</small></div>
+    <div class="card tile" data-go="fan5" style="--c:#0891b2"><div class="ico">🛋</div><b>車廂與設施</b><small>騰雲座艙・多功能車廂・EMU900</small></div></div>
+  <div class="sec">🧠 挑戰</div><div class="tiles">
+    <div class="card tile" data-go="quiz" style="--c:#7c3aed"><div class="ico">🧠</div><b>台鐵小測驗</b><small>10 題・四選一</small></div></div></section>
+<section id="v-code" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="ecode"></div></section>
+<section id="v-fanc" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="fanhd"></div><div id="efan"></div></section>
 <section id="v-quiz" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="qz"></div></section>
-<section id="v-enc" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="etabs" class="chips" style="flex-wrap:wrap;margin-bottom:.6rem"></div><div id="vnav" class="vnav"></div><div id="vlist"></div><div id="ecode" hidden></div><div id="efan" hidden></div>
+<section id="v-enc" class="view"><p><a href="#veh">‹ 返回車輛百科選單</a></p><div id="vnav" class="vnav"></div><div id="vlist"></div>
   <p class="mut">※ 無障礙車廂位置以台鐵官網「無障礙空間說明－設施配置」為準，其餘資料整理自新聞報導與維基百科；照片與摘要連網時由維基百科載入。實際編組可能異動，請以台鐵公告為準。綠色為輪椅／無障礙車廂。</p></section>
 
 <section id="v-off" class="view">
@@ -678,13 +689,30 @@ const EFAN=[
 {n:'電子票證的規定演變',c:'#be123c',t:'2026/7/1 起，持悠遊卡、一卡通、TPASS 不可搭乘 EMU3000（誤乘加收 50% 票價）；PP 自強號目前仍可持電子票證搭乘，台鐵正研議總量管制。'},
 {n:'站內美食：鐵路便當文化',c:'#ea580c',t:'搭火車吃便當是許多旅客的樂趣，福隆便當與池上便當是最有名的兩種，常被鐵道迷當作旅行行程的一部分。'},
 {n:'貨車上的「台灣摩斯密碼」',c:'#b45309',t:'下次看到貨運列車經過，不妨讀讀車身上的注音：鐵道檔案文物室也提到，一般民眾最容易接觸國音電報的地方，就是貨車車身上記載用途與重量的「諸元記號」。詳細解讀見「代碼」分頁。'},
-{n:'拍車安全守則',c:'#64748b',t:'拍攝列車請待在黃線後方，不要進入軌道或月台以外的禁止區域，也不要使用閃光燈干擾駕駛；為了拍照而闖入軌道，是違法且極度危險的行為。'}];
-function renderInfo(){const card=e=>`<article class="card enc" style="--c:${e.c}"><h3>${e.n}</h3>${e.t?`<p>${e.t}</p>`:''}${e.r?`<dl class="kv">${e.r.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`:''}</article>`;
-  $('ecode').innerHTML=ECODE.map(card).join('');$('efan').innerHTML=EFAN.map(card).join('')}
-function encTab(t){ETAB=t;
-  $('etabs').innerHTML=[['car','🚆 車型'],['code','🔢 代碼'],['fan','🔥 鐵道迷話題']].map(([k,n])=>`<button class="chip${k===t?' on':''}" data-et="${k}">${n}</button>`).join('');
-  $('vnav').hidden=$('vlist').hidden=t!=='car';$('ecode').hidden=t!=='code';$('efan').hidden=t!=='fan'}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-et]');if(b)encTab(b.dataset.et)});
+{n:'拍車安全守則',c:'#64748b',t:'拍攝列車請待在黃線後方，不要進入軌道或月台以外的禁止區域，也不要使用閃光燈干擾駕駛；為了拍照而闖入軌道，是違法且極度危險的行為。'},
+{n:'無障礙乘車小提醒',c:'#0891b2',t:'輪椅座位位置依車型而異（可到「車型」頁查看各車型的無障礙車廂位置），座位數量有限；搭乘前建議向車站或客服（0800-765-888）確認。本 App 的班次詳情也會標示該班次的無障礙車廂。'},
+{n:'自行車怎麼帶',c:'#16a34a',t:'並非所有列車都能放自行車，要看車廂設施：',r:[['PP 自強號','第 12 車若為多功能車廂，設有 10 組自行車架'],['EMU900 區間車','一組可容納 12 輛自行車'],['其他','購票前先確認該班次是否可攜帶自行車（班次詳情有 🚲 標示）']]},
+{n:'景觀路線推薦',c:'#0f766e',r:[['南迴線','穿越中央山脈南端，山海景色兼具，連接屏東與臺東'],['北迴線','沿太平洋海岸，連接蘇澳新與花蓮'],['平溪線','支線，以十分與放天燈聞名'],['集集線','支線，以綠色隧道與集集聞名']]},
+{n:'山線與海線',c:'#475569',t:'縱貫線在竹南分成兩條路徑，經苗栗三義的稱「山線」，經通霄、大甲的稱「海線」，兩線在彰化會合。山線坡度大、景色多變；海線平直、靠近海岸。1998 年新山線通車後，勝興站一帶的舊山線停止營運，成為鐵道迷懷念的路段。'},
+{n:'ATP：超速自動煞車',c:'#be123c',t:'ATP（列車自動防護系統）會監控列車速度，超速時自動煞車。鐵道迷常聽到的「ATP 限速」就是這個系統介入；新購 E500 電力機車還具備 ATP 故障時的限速備援系統。'},
+{n:'過分相：電聯車短暫斷電',c:'#7c3aed',t:'電氣化路段由不同變電站分段供電，交界處有「分相絕緣區」，列車必須斷電、靠慣性滑行通過，所以搭電聯車時偶爾會感覺到短暫的斷電。'},
+{n:'再生煞車',c:'#0d9488',t:'多數新型電聯車減速時，馬達會反轉成發電機，把動能轉成電力送回電網或供車上使用，既省電也減少煞車片磨耗。'},
+{n:'普悠瑪紅白塗裝將換新',c:'#dc2626',t:'中時 2026 年 3 月報導指出，普悠瑪號沿用多年的紅白塗裝即將走入歷史，台鐵規劃新設計於年底亮相。想拍經典紅白普悠瑪的鐵道迷要把握機會。'},
+{n:'E500：新一代電力機車',c:'#ea580c',r:[['製造','日本東芝'],['首航','2024 年，牽引 PP 自強號 121 次（七堵→屏東）'],['性能','動力較舊款電力機車高 1.4～1.8 倍，水冷式散熱'],['外觀','亮橘色搭配黑色線條'],['安全','具 ATP 故障時的限速備援系統']]},
+{n:'騰雲座艙：EMU3000 商務車廂',c:'#d97706',t:'位於第 6 車（約 30 席），座椅標籤為橘色，呼應莒光號的傳統橘色；一般車廂的標籤則是藍色。'},
+{n:'多功能車廂：快遞車的新生',c:'#dc2626',t:'PP 自強號的快遞車廂任務在 2016/1/1 終止後，部分車廂改裝為多功能車廂（40PPM2500），設有輪椅停放區（含固定帶）與 10 組自行車架，是推拉式自強號少見的「自行車＋無障礙」車廂。'},
+{n:'EMU900：最美區間車',c:'#22a45d',r:[['製造','韓國現代樂鐵，共採購 520 輛'],['編組','10 節，436 席'],['塗裝','銀綠色'],['設施','12 輛自行車位、8 個輪椅位（第 6 車）；第 5 車為乘務員室']]},
+{n:'DR3100：柴聯自強號',c:'#be123c',r:[['啟用','1998 年 8 月 1 日'],['製造','日本車輛製造、唐榮鐵工廠'],['編組','3 輛一組（DR3100＋DR3150＋DR3100），共 10 組'],['時速','最高 110 km/h'],['特色','配備自動門與冷氣；最多 5 組併掛']]},
+{n:'2026/7/1 大改點',c:'#475569',r:[['莒光號','每日 11 列次減為 7 列次'],['PP 自強號','調整為每日 38 列次，全數改由 E500 牽引'],['E1000 電力機車','退出定期營運'],['EMU3000','持電子票證不可搭乘，誤乘加收 50% 票價']]},
+{n:'老柴聯自強號退役',c:'#64748b',t:'DR2800、DR2900、DR3000 柴聯自強號服務逾 40 年，2023/4/26 退役；之後柴聯自強號只剩 DR3100。'},
+{n:'EMU100：第一代自強號電聯車',c:'#64748b',t:'EMU100 是台鐵第一款自強號電聯車，使用約 30 年後於 2009/6/15 退出營運。'},
+{n:'復興號的誕生',c:'#64748b',t:'復興號 1981/3/1 起加入營運，最初掛在莒光號編組內，被稱為「莒興號」；同年 12/28 唐榮鐵工廠完成 120 輛車廂後，才正式成立復興號編組。'},
+{n:'鐵道迷必記的車次',c:'#2563eb',r:[['605 次','復興號末班車（花蓮→樹林），2022/3/29'],['121 次','E500 電力機車首航牽引的 PP 自強號（七堵→屏東）']]}];
+const infoCard=e=>`<article class="card enc" style="--c:${e.c}"><h3>${e.n}</h3>${e.t?`<p>${e.t}</p>`:''}${e.r?`<dl class="kv">${e.r.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`:''}</article>`;
+const FANC=[{id:'fan1',n:'乘車實用',ico:'🪑',i:[0,10,11,13,16,17]},{id:'fan2',n:'技術原理',ico:'⚙',i:[1,2,8,12,18,19,20]},{id:'fan3',n:'名車與塗裝',ico:'🎨',i:[3,6,7,21,22,26]},{id:'fan4',n:'歷史與時事',ico:'🕰',i:[4,5,9,27,28,29,30,31]},{id:'fan5',n:'車廂與設施',ico:'🛋',i:[23,24,25,15,14]}];
+function renderCode(){$('ecode').innerHTML=ECODE.map(infoCard).join('')}
+function renderFan(id){const c=FANC.find(x=>x.id===id);if(!c)return;
+  $('fanhd').innerHTML=`<h3 style="margin:.2rem 0 .6rem">${c.ico} 鐵道迷話題・${c.n}</h3>`;$('efan').innerHTML=c.i.map(k=>infoCard(EFAN[k])).join('')}
 const WK={};
 async function wikiInfo(q){if(q in WK)return WK[q];
   try{const r=await fetch('https://zh.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=1&prop=pageimages|extracts&piprop=thumbnail&pithumbsize=640&exintro=1&explaintext=1&exsentences=3&format=json&origin=*&gsrsearch='+encodeURIComponent(q));
@@ -701,7 +729,7 @@ function renderVeh(){
    `<article class="card enc" id="e-ret" style="--c:#64748b"><h3>🕰 已退役車種<small class="x">歷史</small></h3><dl class="kv">${RET.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></article>`;
   ENC.forEach(async e=>{const w=await wikiInfo(e.q);if(!w)return;const u='https://zh.wikipedia.org/wiki/'+encodeURIComponent(w.t);
     if(w.img)$('ph-'+e.id).innerHTML=`<img loading="lazy" src="${w.img}" alt="${e.n}"><div class="cap">📷 圖片取自維基百科「${w.t}」，授權依該頁說明 · <a href="${u}" target="_blank" rel="noopener">來源 ↗</a></div>`;
-    if(w.x)$('wk-'+e.id).innerHTML=`📖 維基百科摘要：${w.x} <a href="${u}" target="_blank" rel="noopener">閱讀全文 ↗</a>`});renderInfo();encTab(ETAB)}
+    if(w.x)$('wk-'+e.id).innerHTML=`📖 維基百科摘要：${w.x} <a href="${u}" target="_blank" rel="noopener">閱讀全文 ↗</a>`})}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-j]');if(!a)return;e.preventDefault();const t=$('e-'+a.dataset.j);t&&t.scrollIntoView({behavior:'smooth',block:'start'})});
 
 // ===== 常用路線 =====
@@ -734,18 +762,19 @@ async function renderOff(){let c=null;try{c=await idbGet('data')}catch(e){}
   $('clr').disabled=!c}
 
 // ===== 大廳／分頁 =====
-const TITLES={lobby:'',search:'查班次',fav:'常用路線',no:'車次查詢',delay:'即時誤點',veh:'車輛百科',enc:'車輛百科・圖鑑',quiz:'台鐵小測驗',off:'離線資料',set:'設定',about:'關於'};
+const TITLES={lobby:'',search:'查班次',fav:'常用路線',no:'車次查詢',delay:'即時誤點',veh:'車輛百科',enc:'車輛百科・車型',code:'車輛百科・代碼',fan1:'鐵道迷話題・乘車實用',fan2:'鐵道迷話題・技術原理',fan3:'鐵道迷話題・名車與塗裝',fan4:'鐵道迷話題・歷史與時事',fan5:'鐵道迷話題・車廂與設施',quiz:'台鐵小測驗',off:'離線資料',set:'設定',about:'關於'};
 const go=v=>{location.hash=v==='lobby'?'':v};
 async function show(){
   const h=location.hash.slice(1),v=h&&TITLES[h]?h:'lobby';
-  document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));
+  const vid=/^fan\d$/.test(v)?'fanc':v;
+  document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+vid));
   $('home').style.display=v==='lobby'?'none':'block';
   document.title='台鐵每日班次表'+(TITLES[v]?'・'+TITLES[v]:'');
   scrollTo(0,0);
   if(v==='lobby')renderLobby();
   if(v==='fav')renderFavs();
   if(v==='no'){renderNo();setTimeout(()=>$('no2').focus(),50)}
-  if(v==='enc')renderVeh();if(v==='quiz')qHome();
+  if(v==='enc')renderVeh();if(v==='code')renderCode();if(/^fan\d$/.test(v))renderFan(v);if(v==='quiz')qHome();
   if(v==='off')renderOff();
   if(v==='delay'){renderDelay();markSeen();if(!DT||Date.now()-DT>60000){await loadDelay();renderDelay();markSeen()}}
 }
