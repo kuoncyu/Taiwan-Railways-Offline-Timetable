@@ -2,6 +2,8 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="app-version" content="20261022a">
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>try{document.documentElement.style.setProperty("--u",(+localStorage.fs||100)/100)}catch(e){}</script>
 <title>台鐵每日班次表</title>
@@ -114,6 +116,8 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
 .opt.ok{background:var(--okb);color:var(--ok);border-color:var(--ok)}.opt.no{background:var(--lateb);color:var(--late);border-color:var(--late)}
 .qsvg svg{width:100%;height:auto;background:var(--bg);border-radius:10px;margin:.4rem 0}
 .wr{padding:.5rem 0;border-top:1px dashed var(--bd);font-size:.9rem}
+#upd{position:fixed;left:.5rem;right:.5rem;bottom:calc(.5rem + env(safe-area-inset-bottom));z-index:60;background:#1d4ed8;color:#fff;padding:.7rem .9rem;border-radius:.7rem;display:flex;justify-content:space-between;align-items:center;gap:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+#upd[hidden]{display:none}#upd button{background:#fff;color:#1d4ed8}
 </style>
 </head>
 <body>
@@ -137,6 +141,7 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
     <div class="card tile" data-go="off" style="--c:#0891b2"><div class="ico">⬇</div><b>離線資料</b><small id="offs">無網路也能查</small></div>
     <a class="card tile" href="https://www.railway.gov.tw/tra-tip-web/tip" target="_blank" rel="noopener" style="--c:#16a34a"><div class="ico">📢</div><b>台鐵公告</b><small>官方最新消息 ↗</small></a>
     <div class="card tile" data-go="set" style="--c:#64748b"><div class="ico">⚙</div><b>設定</b><small>字體・TDX 金鑰</small></div>
+    <div class="card tile" data-go="about" style="--c:#0891b2"><div class="ico">ℹ</div><b>關於</b><small>作者・版本號</small></div>
   </div>
   <div class="sec">⭐ 常用路線</div>
   <div class="favs" id="lobbyfav"></div>
@@ -188,9 +193,22 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
   <div class="card pad"><div id="offst" style="font-size:0.938rem"></div>
     <div id="pgw" hidden><div class="pg"><i id="pgb"></i></div><div class="mut" id="pgt"></div></div>
     <div class="row"><button id="dl2">⬇ 下載／更新離線資料</button><button id="clr" class="alt">🗑 清除離線資料</button></div>
+    <button id="dlpk" class="alt" style="margin-top:.5rem">📦 下載離線版 HTML（含班表資料）</button>
+    <p class="mut">離線版是單一 HTML 檔：連同今日班表一起存下，之後沒網路也能直接開啟查班次（照片需連網才會顯示）。</p>
     <p class="mut">連網成功載入時也會自動存一份。清除只會刪除離線班表，不影響常用路線與金鑰。離線時請用同一個瀏覽器、同一個檔案位置開啟本頁。</p></div>
 </section>
 
+<section id="v-about" class="view">
+  <div class="card pad" style="text-align:center"><div style="font-size:2.4rem">🚆</div>
+    <h3 style="margin:.2rem 0">台鐵時刻表</h3>
+    <dl class="kv" style="text-align:left;grid-template-columns:6rem 1fr;margin-top:.8rem">
+      <dt>設計製作</dt><dd>郭柏宏</dd>
+      <dt>版本號</dt><dd><b id="avers"></b></dd>
+      <dt>資料來源</dt><dd>交通部 TDX 運輸資料流通服務、臺灣鐵路公司官網、維基百科</dd></dl>
+    <p class="mut" id="verinfo" style="margin:.4rem 0"></p>
+    <button class="alt" id="chkupd">🔄 檢查更新</button>
+    <p class="mut" style="font-size:.8rem;margin-top:.8rem">班次、誤點與無障礙資訊僅供參考，實際以台鐵公告為準。</p></div>
+</section>
 <section id="v-set" class="view">
   <div class="card pad"><b>🔠 字體大小</b>
     <p class="mut" id="fsinfo"></p>
@@ -205,7 +223,12 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
 </main>
 <dialog id="dlg"></dialog>
 <div class="toast" id="toast"></div>
+<p id="ver" class="mut" style="text-align:center;font-size:.75rem;margin:1rem 0 5rem">版本 <span id="vtxt"></span></p>
+<div id="upd" hidden><span id="updt"></span><button id="updgo">立即更新</button></div>
 <script>
+const SRC=document.documentElement.outerHTML;
+const APP_VER=(document.querySelector("meta[name=app-version]")||{}).content||"";
+const PACK=(()=>{try{const e=document.getElementById("offpack");return e?JSON.parse(e.textContent):null}catch(x){return null}})();
 
 const $=id=>document.getElementById(id);
 const TDX='https://tdx.transportdata.tw';
@@ -294,15 +317,29 @@ async function loadDelay(){
         const j=await r.json();arr=Array.isArray(j)?j:Object.values(j).find(Array.isArray);if(arr)break}catch(e){}
     }
     if(!arr)return false;
-    DELAY={};arr.forEach(x=>{if(x.TrainNo!=null)DELAY[String(x.TrainNo)]={m:+x.DelayTime||0,st:zh(x.StationName)}});
+    DELAY={};arr.forEach(x=>{if(x.TrainNo!=null)DELAY[String(x.TrainNo)]={m:+x.DelayTime||0,st:zh(x.StationName),u:Date.parse(x.SrcUpdateTime||x.UpdateTime||'')||0}});
     DT=Date.now();return true;
   }catch(e){return false}
 }
+const STALE=10*60000,ITEM_STALE=30*60000;
+let TMAP=null;const trOf=no=>{if(!TMAP||TMAP.n!==trains.length)TMAP={n:trains.length,m:new Map(trains.map(t=>[t.no,t]))};return TMAP.m.get(String(no))};
+const toMin=t=>{const a=(t||'').split(':');return a.length>1?(+a[0])*60+(+a[1]):null};
+function tripDone(tr,m){const st=tr&&tr.stops;if(!st||!st.length)return false;
+  const f=toMin(st[0].dep||st[0].arr),l0=st[st.length-1],l=toMin(l0.arr||l0.dep);if(f==null||l==null)return false;
+  const cross=l<f,e=l+(m>0?m:0)+10+(cross?1440:0),d=new Date();let n=d.getHours()*60+d.getMinutes();
+  if(cross&&n<f-120)n+=1440;return n>e}
 function delayInfo(no){
-  if(!DT)return null;
-  const d=DELAY[String(no)];return {m:d?d.m:0,st:d?d.st:'',live:!!d};
-}
-const delayBadge=no=>{const d=delayInfo(no);if(!d)return '';return d.m>0?`<span class="dl late">誤點 ${d.m} 分</span>`:`<span class="dl">準點</span>`};
+  if(!DT||Date.now()-DT>STALE)return null;
+  const d=DELAY[String(no)],tr=trOf(no);
+  if(!d)return {m:0,st:'',live:false,done:tripDone(tr,0)};
+  if(tripDone(tr,d.m))return {m:0,st:'',live:false,done:true};
+  if(d.u&&Date.now()-d.u>ITEM_STALE)return {m:0,st:'',live:false};
+  return {m:d.m,st:d.st,live:true}}
+const activeLate=()=>Object.keys(DELAY).filter(n=>{const i=delayInfo(n);return i&&i.m>0}).sort((a,b)=>DELAY[b].m-DELAY[a].m);
+function seenGet(){const d=new Date().toLocaleDateString('zh-TW');try{const o=JSON.parse(localStorage.lseen||'{}');return o.d===d?o:{d,s:{}}}catch(e){return {d,s:{}}}}
+function markSeen(nos){const o=seenGet();(nos||activeLate()).forEach(n=>{const i=delayInfo(n);o.s[n]=i?i.m:0});try{localStorage.lseen=JSON.stringify(o)}catch(e){}}
+const unreadLate=()=>{const o=seenGet();return activeLate().filter(n=>o.s[n]==null||DELAY[n].m>o.s[n])};
+const delayBadge=no=>{const d=delayInfo(no);if(!d||d.done)return '';return d.m>0?`<span class="dl late">誤點 ${d.m} 分</span>`:`<span class="dl">準點</span>`};
 
 // ===== 離線儲存 =====
 const idb=()=>new Promise((res,rej)=>{const q=indexedDB.open('tra',1);q.onupgradeneeded=()=>q.result.createObjectStore('k');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
@@ -347,6 +384,7 @@ async function load(){
   }catch(e){
     prog(100,'⚠ 下載失敗：'+e.message);
     let c=null;try{c=await idbGet('data')}catch(_){}
+    if(PACK&&PACK.trains&&(!c||!c.ts||PACK.ts>c.ts)){c=PACK;idbSet('data',PACK).catch(()=>{})}
     if(c&&c.trains&&c.trains.length){
       trains=c.trains;CITY=c.CITY||{};
       $('msg').textContent=`離線資料 ${c.date}（${e.message}）`+(c.date!==today?' ⚠ 非今日班表':'');
@@ -409,9 +447,10 @@ function renderNo(){const q=$('no2').value.trim();
   const rows=q?trains.filter(t=>t.no.startsWith(q)).sort((a,b)=>a.no-b.no).slice(0,50).map(full):[];
   $('nolist').innerHTML=rows.length?cards(rows,'nolist'):`<div class="card empty">${q?'找不到這個車次':'輸入車次號碼開始查詢 🔢'}</div>`}
 function renderDelay(){
-  const late=Object.entries(DELAY).filter(([n,d])=>d.m>0).sort((a,b)=>b[1].m-a[1].m).map(([n])=>trains.find(t=>t.no===n)).filter(Boolean).map(full);
-  $('dlinfo').textContent=DT?`更新 ${new Date(DT).toTimeString().slice(0,5)}・誤點 ${late.length} 班`:'離線中或尚未取得誤點資料';
-  $('dlist').innerHTML=!DT?'<div class="card empty">📴 無法取得即時誤點，請連網後按「更新」</div>'
+  const fresh=!!DT&&Date.now()-DT<=STALE;
+  const late=fresh?activeLate().map(trOf).filter(Boolean).map(full):[];
+  $('dlinfo').textContent=fresh?`更新 ${new Date(DT).toTimeString().slice(0,5)}・目前誤點 ${late.length} 班`:(DT?'誤點資料已過期，請按「更新」':'離線中或尚未取得誤點資料');
+  $('dlist').innerHTML=!fresh?'<div class="card empty">📴 沒有最新的誤點資料，請連網後按「更新」<br><small class="mut">（過時的誤點不會顯示）</small></div>'
     :late.length?cards(late,'dlist'):'<div class="card empty">🎉 目前沒有誤點通報的列車</div>'}
 let SVGN=0;
 const LV={
@@ -686,16 +725,16 @@ function renderFavs(){
   const n=favs().length;$('favn').hidden=!n;$('favn').textContent=n;
 }
 function renderLobby(){renderFavs();
-  const n=Object.values(DELAY).filter(d=>d.m>0).length;$('latn').hidden=!(DT&&n);$('latn').textContent=n;
+  const n=unreadLate().length;$('latn').hidden=!n;$('latn').textContent=n;
   idbGet('data').then(c=>{$('offs').textContent=c?`已存 ${c.date}`:'尚未下載'}).catch(()=>{})}
 async function renderOff(){let c=null;try{c=await idbGet('data')}catch(e){}
   let q='';try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();q=`<dt>🗄 本網站總用量</dt><dd>${fmtB(e.usage||0)}／上限約 ${fmtB(e.quota||0)}</dd>`}}catch(e){}
   const kv=x=>`<dl class="kv" style="grid-template-columns:120px 1fr">${x}</dl>`;
-  $('offst').innerHTML=c?kv(`<dt>📦 班表日期</dt><dd><b>${c.date}</b>${c.date!==new Date().toLocaleDateString('zh-TW')?' ⚠ 非今日班表':''}</dd><dt>🕒 更新時間</dt><dd>${c.ts?fmtT(c.ts)+'（'+ago(c.ts)+'）':'未記錄（舊版資料，請按更新）'}</dd><dt>🚆 班次數</dt><dd>${c.trains.length} 班</dd><dt>💾 佔用空間</dt><dd>${c.bytes?fmtB(c.bytes):'約 '+fmtB(new Blob([JSON.stringify(c)]).size)}</dd>${q}`):'📦 尚未儲存離線資料'+(q?kv(q):'');
+  $('offst').innerHTML=c?kv(`<dt>📦 班表日期</dt><dd><b>${c.date}</b>${c.date!==new Date().toLocaleDateString('zh-TW')?' ⚠ 非今日班表':''}</dd><dt>🕒 更新時間</dt><dd>${c.ts?fmtT(c.ts)+'（'+ago(c.ts)+'）':'未記錄（舊版資料，請按更新）'}</dd><dt>🚆 班次數</dt><dd>${c.trains.length} 班</dd><dt>🌐 連線狀態</dt><dd>${navigator.onLine?'連線中':'離線中'}</dd>${PACK?`<dt>📦 內建資料</dt><dd>此檔案內含 ${PACK.date} 班表</dd>`:''}<dt>💾 佔用空間</dt><dd>${c.bytes?fmtB(c.bytes):'約 '+fmtB(new Blob([JSON.stringify(c)]).size)}</dd>${q}`):'📦 尚未儲存離線資料'+(q?kv(q):'');
   $('clr').disabled=!c}
 
 // ===== 大廳／分頁 =====
-const TITLES={lobby:'',search:'查班次',fav:'常用路線',no:'車次查詢',delay:'即時誤點',veh:'車輛百科',enc:'車輛百科・圖鑑',quiz:'台鐵小測驗',off:'離線資料',set:'設定'};
+const TITLES={lobby:'',search:'查班次',fav:'常用路線',no:'車次查詢',delay:'即時誤點',veh:'車輛百科',enc:'車輛百科・圖鑑',quiz:'台鐵小測驗',off:'離線資料',set:'設定',about:'關於'};
 const go=v=>{location.hash=v==='lobby'?'':v};
 async function show(){
   const h=location.hash.slice(1),v=h&&TITLES[h]?h:'lobby';
@@ -708,14 +747,15 @@ async function show(){
   if(v==='no'){renderNo();setTimeout(()=>$('no2').focus(),50)}
   if(v==='enc')renderVeh();if(v==='quiz')qHome();
   if(v==='off')renderOff();
-  if(v==='delay'){renderDelay();if(!DT||Date.now()-DT>60000){await loadDelay();renderDelay()}}
+  if(v==='delay'){renderDelay();markSeen();if(!DT||Date.now()-DT>60000){await loadDelay();renderDelay();markSeen()}}
 }
 function refreshAll(){render();renderNo();renderDelay()}
 
 async function detail(r){
   const tr=r.tr,v=vehicleOf(tr),i=r.i,j=r.j,c=typeColor(tr.type);
-  const draw=()=>{const d=delayInfo(tr.no);
-    const ban=!d?`<div class="banner na">📴 離線中，無法顯示誤點資訊</div>`
+  const draw=()=>{const d=delayInfo(tr.no);if(d&&d.m>0)markSeen([tr.no]);
+    const ban=!d?`<div class="banner na">📴 目前沒有最新的誤點資訊（離線或資料已過期）</div>`
+      :d.done?`<div class="banner na">🏁 本班次今日已到達終點站</div>`
       :d.m>0?`<div class="banner late"><span>⚠ 誤點 ${d.m} 分鐘${d.st?`（目前在 ${d.st}）`:''}</span><small>更新 ${new Date(DT).toTimeString().slice(0,5)}</small></div>`
       :`<div class="banner"><span>✅ 準點${d.live&&d.st?`（目前在 ${d.st}）`:''}</span><small>${d.live?'':'目前無誤點通報・'}更新 ${new Date(DT).toTimeString().slice(0,5)}</small></div>`;
     $('dlg').innerHTML=`
@@ -764,6 +804,24 @@ $('fs').oninput=e=>setFs(+e.target.value);$('fsdn').onclick=()=>setFs(getFs()-10
 applyFs();
 $('home').onclick=()=>go('lobby');$('addfav').onclick=addFav;
 $('no2').oninput=renderNo;$('dlrf').onclick=async()=>{$('dlinfo').textContent='更新中…';await loadDelay();renderDelay();renderLobby()};
+let NEWV='';
+async function checkUpd(manual){
+  if(!/^https?:/.test(location.protocol)){if(manual)toast('本機檔案無法檢查更新');return}
+  if(!navigator.onLine){if(manual)toast('目前離線，無法檢查更新');return}
+  try{const u=location.href.split('#')[0].split('?')[0]+'?_='+Date.now();
+    const r=await fetch(u,{cache:'no-store'});const m=(await r.text()).match(/name="app-version"\s+content="([^"]+)"/),nv=m&&m[1];
+    if(nv&&nv>APP_VER){NEWV=nv;$('updt').textContent='🔄 有新版本 '+nv+'（目前 '+APP_VER+'）';$('upd').hidden=false;$('verinfo').textContent='目前版本 '+APP_VER+'・發現新版本 '+nv}
+    else if(manual)toast('已是最新版 '+APP_VER)}
+  catch(e){if(manual)toast('檢查更新失敗')}}
+$('vtxt').textContent=APP_VER;$('avers').textContent=APP_VER;$('verinfo').textContent='目前版本 '+APP_VER;
+$('chkupd').onclick=()=>checkUpd(true);
+$('updgo').onclick=()=>{location.replace(location.href.split('#')[0].split('?')[0]+'?v='+encodeURIComponent(NEWV)+(location.hash||''))};
+setTimeout(()=>checkUpd(),2500);setInterval(()=>checkUpd(),300000);
+async function tick(force){if(document.hidden)return;
+  if(navigator.onLine&&(force||!DT||Date.now()-DT>50000))await loadDelay();
+  const v=location.hash.slice(1)||'lobby';
+  if(v==='lobby')renderLobby();if(v==='delay'){renderDelay();markSeen()}if(v==='search')render();if(v==='no')renderNo()}
+setInterval(()=>tick(),60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){tick();checkUpd()}});
 addEventListener('hashchange',show);
 $('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;TYPE=b.dataset.t;SHOW=60;
   [...$('chips').children].forEach(x=>x.classList.toggle('on',x===b));render()};
@@ -772,6 +830,18 @@ $('swap').onclick=()=>{const a=[$('fc').value,$('from').value],b=[$('tc').value,
 $('fc').onchange=()=>{fillSt('fc','from');SHOW=60;render()};$('tc').onchange=()=>{fillSt('tc','to');SHOW=60;render()};
 ['from','to','time','no'].forEach(id=>$(id).oninput=()=>{SHOW=60;render()});
 $('now').onclick=()=>{setNow();render()};
+async function dlPack(){let c=null;try{c=await idbGet('data')}catch(e){}
+  if(!c||!c.trains){toast('尚無離線資料，請先按「下載／更新」');return}
+  const pack=JSON.stringify({trains:c.trains,CITY:c.CITY||{},date:c.date,ts:c.ts||Date.now()}).replace(/</g,'\\u003c');
+  let html='<!DOCTYPE html>\n'+SRC.replace(/<script id="offpack"[\s\S]*?<\/script>/,'');
+  html=html.replace('</head>',()=>'<script id="offpack" type="application/json">'+pack+'<\/script></head>');
+  const b=new Blob([html],{type:'text/html'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='tra-timetable-offline-'+String(c.date).replace(/\D/g,'')+'.html';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast('已下載離線版（'+fmtB(b.size)+'），含 '+c.date+' 班表')}
+$('dlpk').onclick=dlPack;
+addEventListener('offline',()=>{toast('已離線，改用已存資料');renderOff()});
+addEventListener('online',()=>{toast('已恢復連線');renderOff()});
 $('dl2').onclick=()=>{if(!navigator.onLine)return toast('目前離線，無法下載');if(LOADING)return toast('正在下載中…');load()};
 $('clr').onclick=async()=>{if(!confirm('清除已儲存的離線班表？（常用路線與金鑰不會被刪除）'))return;
   try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction('k','readwrite');t.objectStore('k').delete('data');t.oncomplete=res;t.onerror=()=>rej(t.error)});$('pgw').hidden=true;toast('已清除離線資料')}catch(e){toast('清除失敗')}
