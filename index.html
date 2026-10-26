@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="20261022d">
+<meta name="app-version" content="20261026">
 <meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>try{document.documentElement.style.setProperty("--u",(+localStorage.fs||100)/100)}catch(e){}</script>
@@ -118,10 +118,12 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
 .wr{padding:.5rem 0;border-top:1px dashed var(--bd);font-size:.9rem}
 #upd{position:fixed;left:.5rem;right:.5rem;bottom:calc(.5rem + env(safe-area-inset-bottom));z-index:60;background:#1d4ed8;color:#fff;padding:.7rem .9rem;border-radius:.7rem;display:flex;justify-content:space-between;align-items:center;gap:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.3)}
 #upd[hidden]{display:none}#upd button{background:#fff;color:#1d4ed8}
-#offbar{background:#fef3c7;color:#92400e;padding:.5rem .9rem;font-size:.85rem;text-align:center;border-bottom:1px solid #fcd34d}#offbar[hidden]{display:none}.tile.dis{opacity:.55}
+#offbar{position:sticky;top:0;z-index:80;background:#fef3c7;color:#92400e;padding:calc(.5rem + env(safe-area-inset-top)) .9rem .5rem;box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:.85rem;text-align:center;border-bottom:1px solid #fcd34d}#offbar[hidden]{display:none}.tile.dis{opacity:.55}
+.search{top:var(--ob,0px)}
 </style>
 </head>
 <body>
+<div id="offbar" hidden>📴 離線模式：使用已存班表<span id="offd"></span>。即時誤點／車班動態與更新班表需連網才能使用。</div>
 <div class="hero"><div class="in">
   <div class="top"><h1 id="ttl">🚆 台鐵每日班次表 <span id="net" class="pill">連線中</span></h1><button id="home" class="hb">🏠 大廳</button></div>
   <nav>
@@ -130,7 +132,6 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
     <a href="https://tdx.transportdata.tw/" target="_blank" rel="noopener">TDX 資料來源 ↗</a>
   </nav>
 </div></div>
-<div id="offbar" hidden>📴 離線模式：使用已存班表<span id="offd"></span>。即時誤點／車班動態與更新班表需連網才能使用。</div>
 <main>
 
 <section id="v-lobby" class="view">
@@ -364,7 +365,8 @@ const fmtB=n=>n>=1048576?(n/1048576).toFixed(2)+' MB':n>=1024?(n/1024).toFixed(1
 const fmtT=t=>new Date(t).toLocaleString('zh-TW',{hour12:false});
 const ago=t=>{const m=Math.round((Date.now()-t)/60000);return m<1?'剛剛':m<60?m+' 分鐘前':m<1440?Math.floor(m/60)+' 小時前':Math.floor(m/1440)+' 天前'};
 let LOADING=false,DATA_DATE='';
-function applyNet(){const o=!navigator.onLine;$('offbar').hidden=!o;$('offd').textContent=DATA_DATE?'（'+DATA_DATE+'）':'';
+addEventListener('resize',()=>{if(!navigator.onLine)applyNet()});
+function applyNet(){const o=!navigator.onLine;$('offbar').hidden=!o;document.documentElement.style.setProperty('--ob',o?$('offbar').offsetHeight+'px':'0px');$('offd').textContent=DATA_DATE?'（'+DATA_DATE+'）':'';
   const t=document.querySelector('[data-go="delay"]');if(t){t.classList.toggle('dis',o);const sm=t.querySelector('small');if(sm)sm.textContent=o?'需連網':'目前誤點列車'}
   ['dlrf','dl2'].forEach(i=>{const b=$(i);if(b)b.disabled=o})}
 function prog(p,txt){const w=$('pgw');w.hidden=false;w.firstElementChild.classList.toggle('ind',p==null);if(p!=null)$('pgb').style.width=p+'%';$('pgt').textContent=txt}
