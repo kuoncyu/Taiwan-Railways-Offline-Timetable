@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="app-version" content="20261022c">
+<meta name="app-version" content="20261022d">
 <meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>try{document.documentElement.style.setProperty("--u",(+localStorage.fs||100)/100)}catch(e){}</script>
@@ -118,6 +118,7 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
 .wr{padding:.5rem 0;border-top:1px dashed var(--bd);font-size:.9rem}
 #upd{position:fixed;left:.5rem;right:.5rem;bottom:calc(.5rem + env(safe-area-inset-bottom));z-index:60;background:#1d4ed8;color:#fff;padding:.7rem .9rem;border-radius:.7rem;display:flex;justify-content:space-between;align-items:center;gap:.5rem;box-shadow:0 4px 16px rgba(0,0,0,.3)}
 #upd[hidden]{display:none}#upd button{background:#fff;color:#1d4ed8}
+#offbar{background:#fef3c7;color:#92400e;padding:.5rem .9rem;font-size:.85rem;text-align:center;border-bottom:1px solid #fcd34d}#offbar[hidden]{display:none}.tile.dis{opacity:.55}
 </style>
 </head>
 <body>
@@ -129,6 +130,7 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
     <a href="https://tdx.transportdata.tw/" target="_blank" rel="noopener">TDX 資料來源 ↗</a>
   </nav>
 </div></div>
+<div id="offbar" hidden>📴 離線模式：使用已存班表<span id="offd"></span>。即時誤點／車班動態與更新班表需連網才能使用。</div>
 <main>
 
 <section id="v-lobby" class="view">
@@ -206,6 +208,7 @@ main{padding-left:max(.75rem,env(safe-area-inset-left));padding-right:max(.75rem
     <div class="row"><button id="dl2">⬇ 下載／更新離線資料</button><button id="clr" class="alt">🗑 清除離線資料</button></div>
     <button id="dlpk" class="alt" style="margin-top:.5rem">📦 下載離線版 HTML（含班表資料）</button>
     <p class="mut">離線版是單一 HTML 檔：連同今日班表一起存下，之後沒網路也能直接開啟查班次（照片需連網才會顯示）。</p>
+    <p class="mut">🛜 網頁本身會由 Service Worker 快取：第一次連網開啟後，沒有網路也能直接開啟本頁並自動進入離線模式（請把 sw.js 與本檔放在同一個網站資料夾）。</p>
     <p class="mut">連網成功載入時也會自動存一份。清除只會刪除離線班表，不影響常用路線與金鑰。離線時請用同一個瀏覽器、同一個檔案位置開啟本頁。</p></div>
 </section>
 
@@ -340,7 +343,7 @@ function tripDone(tr,m){const st=tr&&tr.stops;if(!st||!st.length)return false;
   const cross=l<f,e=l+(m>0?m:0)+10+(cross?1440:0),d=new Date();let n=d.getHours()*60+d.getMinutes();
   if(cross&&n<f-120)n+=1440;return n>e}
 function delayInfo(no){
-  if(!DT||Date.now()-DT>STALE)return null;
+  if(!navigator.onLine||!DT||Date.now()-DT>STALE)return null;
   const d=DELAY[String(no)],tr=trOf(no);
   if(!d)return {m:0,st:'',live:false,done:tripDone(tr,0)};
   if(tripDone(tr,d.m))return {m:0,st:'',live:false,done:true};
@@ -360,7 +363,10 @@ const idbGet=async k=>{const d=await idb();return new Promise((res,rej)=>{const 
 const fmtB=n=>n>=1048576?(n/1048576).toFixed(2)+' MB':n>=1024?(n/1024).toFixed(1)+' KB':n+' B';
 const fmtT=t=>new Date(t).toLocaleString('zh-TW',{hour12:false});
 const ago=t=>{const m=Math.round((Date.now()-t)/60000);return m<1?'剛剛':m<60?m+' 分鐘前':m<1440?Math.floor(m/60)+' 小時前':Math.floor(m/1440)+' 天前'};
-let LOADING=false;
+let LOADING=false,DATA_DATE='';
+function applyNet(){const o=!navigator.onLine;$('offbar').hidden=!o;$('offd').textContent=DATA_DATE?'（'+DATA_DATE+'）':'';
+  const t=document.querySelector('[data-go="delay"]');if(t){t.classList.toggle('dis',o);const sm=t.querySelector('small');if(sm)sm.textContent=o?'需連網':'目前誤點列車'}
+  ['dlrf','dl2'].forEach(i=>{const b=$(i);if(b)b.disabled=o})}
 function prog(p,txt){const w=$('pgw');w.hidden=false;w.firstElementChild.classList.toggle('ind',p==null);if(p!=null)$('pgb').style.width=p+'%';$('pgt').textContent=txt}
 async function readJson(r,cb){if(!r.body||!r.body.getReader)return r.json();
   const tot=+r.headers.get('content-length')||0,rd=r.body.getReader(),ch=[];let n=0;
@@ -389,22 +395,22 @@ async function load(){
       line:x.TrainInfo.TripLine,dining:x.TrainInfo.DiningFlag,pack:x.TrainInfo.PackageServiceFlag,note:zh(x.TrainInfo.Note),
       stops:(x.StopTimes||[]).map(s=>({st:zh(s.StationName),arr:hm(s.ArrivalTime),dep:hm(s.DepartureTime)}))
     }));
-    $('msg').textContent=`今日班表 ${today}`;
+    $('msg').textContent=`今日班表 ${today}`;DATA_DATE=today;
     try{const bytes=new Blob([JSON.stringify({trains,CITY})]).size;await idbSet('data',{trains,CITY,date:today,ts:Date.now(),bytes});$('msg').textContent+='・已存離線資料 ✅';prog(100,'完成 ✅ 已儲存 '+fmtB(bytes))}
     catch(e){$('msg').textContent+='（離線儲存失敗）';prog(100,'⚠ 離線儲存失敗')}
   }catch(e){
-    prog(100,'⚠ 下載失敗：'+e.message);
+    prog(100,navigator.onLine?'⚠ 下載失敗：'+e.message:'📴 離線模式：使用已存資料');
     let c=null;try{c=await idbGet('data')}catch(_){}
     if(PACK&&PACK.trains&&(!c||!c.ts||PACK.ts>c.ts)){c=PACK;idbSet('data',PACK).catch(()=>{})}
     if(c&&c.trains&&c.trains.length){
       trains=c.trains;CITY=c.CITY||{};
-      $('msg').textContent=`離線資料 ${c.date}（${e.message}）`+(c.date!==today?' ⚠ 非今日班表':'');
+      $('msg').textContent=(navigator.onLine?`離線資料 ${c.date}（${e.message}）`:`📴 離線模式・使用已存班表 ${c.date}`)+(c.date!==today?' ⚠ 非今日班表':'');DATA_DATE=c.date;
     }else{
       $('msg').textContent='無法取得資料（'+e.message+'），顯示示範資料';
       trains=DEMO;if(!Object.keys(CITY).length)CITY={'臺北':'臺北市','臺中':'臺中市','臺南':'臺南市','新竹':'新竹市'};
     }
   }
-  LOADING=false;renderOff();
+  LOADING=false;renderOff();applyNet();
   init();
   if(await loadDelay())refreshAll();
 }
@@ -458,10 +464,10 @@ function renderNo(){const q=$('no2').value.trim();
   const rows=q?trains.filter(t=>t.no.startsWith(q)).sort((a,b)=>a.no-b.no).slice(0,50).map(full):[];
   $('nolist').innerHTML=rows.length?cards(rows,'nolist'):`<div class="card empty">${q?'找不到這個車次':'輸入車次號碼開始查詢 🔢'}</div>`}
 function renderDelay(){
-  const fresh=!!DT&&Date.now()-DT<=STALE;
+  const off=!navigator.onLine,fresh=!off&&!!DT&&Date.now()-DT<=STALE;
   const late=fresh?activeLate().map(trOf).filter(Boolean).map(full):[];
-  $('dlinfo').textContent=fresh?`更新 ${new Date(DT).toTimeString().slice(0,5)}・目前誤點 ${late.length} 班`:(DT?'誤點資料已過期，請按「更新」':'離線中或尚未取得誤點資料');
-  $('dlist').innerHTML=!fresh?'<div class="card empty">📴 沒有最新的誤點資料，請連網後按「更新」<br><small class="mut">（過時的誤點不會顯示）</small></div>'
+  $('dlinfo').textContent=off?'📴 離線模式・需連網才有即時誤點':fresh?`更新 ${new Date(DT).toTimeString().slice(0,5)}・目前誤點 ${late.length} 班`:(DT?'誤點資料已過期，請按「更新」':'離線中或尚未取得誤點資料');
+  $('dlist').innerHTML=off?'<div class="card empty">📴 離線模式：即時誤點需要連網才能使用<br><small class="mut">連線後會自動更新</small></div>':!fresh?'<div class="card empty">📴 沒有最新的誤點資料，請連網後按「更新」<br><small class="mut">（過時的誤點不會顯示）</small></div>'
     :late.length?cards(late,'dlist'):'<div class="card empty">🎉 目前沒有誤點通報的列車</div>'}
 let SVGN=0;
 const LV={
@@ -714,7 +720,7 @@ function renderCode(){$('ecode').innerHTML=ECODE.map(infoCard).join('')}
 function renderFan(id){const c=FANC.find(x=>x.id===id);if(!c)return;
   $('fanhd').innerHTML=`<h3 style="margin:.2rem 0 .6rem">${c.ico} 鐵道迷話題・${c.n}</h3>`;$('efan').innerHTML=c.i.map(k=>infoCard(EFAN[k])).join('')}
 const WK={};
-async function wikiInfo(q){if(q in WK)return WK[q];
+async function wikiInfo(q){if(q in WK)return WK[q];if(!navigator.onLine)return null;
   try{const r=await fetch('https://zh.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=1&prop=pageimages|extracts&piprop=thumbnail&pithumbsize=640&exintro=1&explaintext=1&exsentences=3&format=json&origin=*&gsrsearch='+encodeURIComponent(q));
     const p=Object.values((await r.json()).query.pages)[0];return WK[q]={t:p.title,img:p.thumbnail&&p.thumbnail.source,x:p.extract}}catch(e){return WK[q]=null}}
 function renderVeh(){
@@ -758,7 +764,7 @@ function renderLobby(){renderFavs();
 async function renderOff(){let c=null;try{c=await idbGet('data')}catch(e){}
   let q='';try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();q=`<dt>🗄 本網站總用量</dt><dd>${fmtB(e.usage||0)}／上限約 ${fmtB(e.quota||0)}</dd>`}}catch(e){}
   const kv=x=>`<dl class="kv" style="grid-template-columns:120px 1fr">${x}</dl>`;
-  $('offst').innerHTML=c?kv(`<dt>📦 班表日期</dt><dd><b>${c.date}</b>${c.date!==new Date().toLocaleDateString('zh-TW')?' ⚠ 非今日班表':''}</dd><dt>🕒 更新時間</dt><dd>${c.ts?fmtT(c.ts)+'（'+ago(c.ts)+'）':'未記錄（舊版資料，請按更新）'}</dd><dt>🚆 班次數</dt><dd>${c.trains.length} 班</dd><dt>🌐 連線狀態</dt><dd>${navigator.onLine?'連線中':'離線中'}</dd>${PACK?`<dt>📦 內建資料</dt><dd>此檔案內含 ${PACK.date} 班表</dd>`:''}<dt>💾 佔用空間</dt><dd>${c.bytes?fmtB(c.bytes):'約 '+fmtB(new Blob([JSON.stringify(c)]).size)}</dd>${q}`):'📦 尚未儲存離線資料'+(q?kv(q):'');
+  $('offst').innerHTML=c?kv(`<dt>📦 班表日期</dt><dd><b>${c.date}</b>${c.date!==new Date().toLocaleDateString('zh-TW')?' ⚠ 非今日班表':''}</dd><dt>🕒 更新時間</dt><dd>${c.ts?fmtT(c.ts)+'（'+ago(c.ts)+'）':'未記錄（舊版資料，請按更新）'}</dd><dt>🚆 班次數</dt><dd>${c.trains.length} 班</dd><dt>🌐 連線狀態</dt><dd>${navigator.onLine?'連線中':'離線中（離線模式）'}</dd><dt>🛜 網頁快取</dt><dd>${navigator.serviceWorker&&navigator.serviceWorker.controller?'已啟用，沒網路也能開啟本頁':'尚未啟用（需放在網站空間並連網開啟一次）'}</dd>${PACK?`<dt>📦 內建資料</dt><dd>此檔案內含 ${PACK.date} 班表</dd>`:''}<dt>💾 佔用空間</dt><dd>${c.bytes?fmtB(c.bytes):'約 '+fmtB(new Blob([JSON.stringify(c)]).size)}</dd>${q}`):'📦 尚未儲存離線資料'+(q?kv(q):'');
   $('clr').disabled=!c}
 
 // ===== 大廳／分頁 =====
@@ -832,7 +838,7 @@ const setFs=v=>{localStorage.fs=Math.min(160,Math.max(80,v));applyFs()};
 $('fs').oninput=e=>setFs(+e.target.value);$('fsdn').onclick=()=>setFs(getFs()-10);$('fsup').onclick=()=>setFs(getFs()+10);$('fsrs').onclick=()=>{localStorage.removeItem('fs');applyFs()};
 applyFs();
 $('home').onclick=()=>go('lobby');$('addfav').onclick=addFav;
-$('no2').oninput=renderNo;$('dlrf').onclick=async()=>{$('dlinfo').textContent='更新中…';await loadDelay();renderDelay();renderLobby()};
+$('no2').oninput=renderNo;$('dlrf').onclick=async()=>{if(!navigator.onLine)return toast('離線模式：需連網才能更新誤點');$('dlinfo').textContent='更新中…';await loadDelay();renderDelay();renderLobby()};
 let NEWV='';
 async function checkUpd(manual){
   if(!/^https?:/.test(location.protocol)){if(manual)toast('本機檔案無法檢查更新');return}
@@ -845,6 +851,7 @@ async function checkUpd(manual){
 $('vtxt').textContent=APP_VER;$('avers').textContent=APP_VER;$('verinfo').textContent='目前版本 '+APP_VER;
 $('chkupd').onclick=()=>checkUpd(true);
 $('updgo').onclick=()=>{location.replace(location.href.split('#')[0].split('?')[0]+'?v='+encodeURIComponent(NEWV)+(location.hash||''))};
+if('serviceWorker' in navigator&&/^https?:/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(r=>r.active&&r.active.postMessage({type:'precache',url:location.href.split('#')[0].split('?')[0]})).catch(()=>{})}
 setTimeout(()=>checkUpd(),2500);setInterval(()=>checkUpd(),300000);
 async function tick(force){if(document.hidden)return;
   if(navigator.onLine&&(force||!DT||Date.now()-DT>50000))await loadDelay();
@@ -869,8 +876,7 @@ async function dlPack(){let c=null;try{c=await idbGet('data')}catch(e){}
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   toast('已下載離線版（'+fmtB(b.size)+'），含 '+c.date+' 班表')}
 $('dlpk').onclick=dlPack;
-addEventListener('offline',()=>{toast('已離線，改用已存資料');renderOff()});
-addEventListener('online',()=>{toast('已恢復連線');renderOff()});
+addEventListener('offline',renderOff);addEventListener('online',renderOff);
 $('dl2').onclick=()=>{if(!navigator.onLine)return toast('目前離線，無法下載');if(LOADING)return toast('正在下載中…');load()};
 $('clr').onclick=async()=>{if(!confirm('清除已儲存的離線班表？（常用路線與金鑰不會被刪除）'))return;
   try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction('k','readwrite');t.objectStore('k').delete('data');t.oncomplete=res;t.onerror=()=>rej(t.error)});$('pgw').hidden=true;toast('已清除離線資料')}catch(e){toast('清除失敗')}
@@ -878,8 +884,9 @@ $('clr').onclick=async()=>{if(!confirm('清除已儲存的離線班表？（常�
 $('dlg').onclick=e=>{if(e.target===$('dlg'))$('dlg').close()};
 $('save').onclick=()=>{localStorage.cid=$('cid').value.trim();localStorage.csec=$('csec').value.trim();TK=null;load()};
 $('cid').value=localStorage.cid||'';$('csec').value=localStorage.csec||'';$('cid').placeholder='留空＝使用內建金鑰';$('csec').placeholder='留空＝使用內建金鑰';
-const net=()=>{const o=navigator.onLine;$('net').textContent=o?'● 已連線':'● 離線';$('net').className='pill'+(o?'':' off')};
-addEventListener('online',()=>{net();load()});addEventListener('offline',()=>{net();DT=0;refreshAll()});net();
+const net=()=>{const o=navigator.onLine;$('net').textContent=o?'● 已連線':'● 離線';$('net').className='pill'+(o?'':' off');applyNet()};
+addEventListener('online',()=>{net();toast('已恢復連線');if(DATA_DATE!==new Date().toLocaleDateString('zh-TW'))load();tick(true);checkUpd()});
+addEventListener('offline',()=>{net();DT=0;toast('已進入離線模式，使用已存班表');refreshAll();renderLobby();if((location.hash.slice(1)||'')==='delay')renderDelay()});net();
 
 const DEMO=[
  {no:'123',type:'自強',dir:0,from:'樹林',to:'臺東',bike:0,wheel:1,baby:0,daily:1,note:'',stops:[{st:'臺北',arr:'08:00',dep:'08:02'},{st:'臺中',arr:'10:05',dep:'10:07'},{st:'臺南',arr:'11:50',dep:'11:52'}]},
